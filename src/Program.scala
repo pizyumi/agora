@@ -30,14 +30,13 @@ object Program {
 
     //WebServer.mount(new BlockchainApp(dotExeFile, graphvizFolder)).port(webServerPort).start()
 
-
-
-    val cli: Blockchain.CLI = new CLI(StandardCLIFactory, new BusinessLogic(StandardBusinessLogicFactory))
-    val secp256k1CLI: Secp256k1TestCLI = new Secp256k1TestCLI()
-    val graphvizCLI: GraphvizSampleCLI = new GraphvizSampleCLI(dotExeFile, graphvizFolder)
-    val linkedListCLI: LinkedListTestCLI = new LinkedListTestCLI(reportFolder, dotExeFile)
-    val binaryTreeCLI: BinaryTreeTestCLI = new BinaryTreeTestCLI(reportFolder, dotExeFile)
-    val standardImplTestCLI: StandardImplementationTestCLI = new StandardImplementationTestCLI()
+    val cli: Common.CLI = new Common.CLI()
+    cli.register(new Blockchain.CLI(StandardCLIFactory, new BusinessLogic(StandardBusinessLogicFactory)))
+    cli.register(new Secp256k1TestCLI())
+    cli.register(new GraphvizSampleCLI(dotExeFile, graphvizFolder))
+    cli.register(new LinkedListTestCLI(reportFolder, dotExeFile))
+    cli.register(new BinaryTreeTestCLI(reportFolder, dotExeFile))
+    cli.register(new StandardImplementationTestCLI())
 
     var f: Boolean = true
     while (f) {
@@ -47,17 +46,7 @@ object Program {
       }
       else {
         if (!cli.executeCommand(command)) {
-          if (!secp256k1CLI.executeCommand(command)) {
-            if (!binaryTreeCLI.executeCommand(command)) {
-              if (!graphvizCLI.executeCommand(command)) {
-                if (!linkedListCLI.executeCommand(command)) {
-                  if (!standardImplTestCLI.executeCommand(command)) {
-                    println(__.toErrorMessage("the command is not supported"))
-                  }
-                }
-              }
-            }
-          }
+          println(__.toErrorMessage("the command is not supported"))
         }
       }
     }

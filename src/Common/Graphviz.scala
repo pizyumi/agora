@@ -50,19 +50,15 @@ object Graphviz {
   def execute(dot: String, dotExeFile: String, folder: String, filebase: String): Path = execute(dot, dotExeFile, folder, filebase + __.extensionDOT, filebase + __.extensionSVG)
 }
 
-class GraphvizSampleCLI(dotExeFile: String, workFolder: String) {
+class GraphvizSampleCLI(dotExeFile: String, workFolder: String) extends ICLIComponent {
   protected lazy val sampleInterface: SampleInterface = new SampleCLI()
 
-  protected lazy val sample: String = "sample graphviz 1"
+  protected lazy val sample1: String = "sample graphviz 1"
 
-  def executeCommand(command: String): Boolean = {
-    if (command.startsWith(sample)) {
-      doSample1()
-      true
-    }
-    else {
-      false
-    }
+  def getCommands: Traversable[Command] = {
+    Array(
+      new Command(sample1, doSample1)
+    )
   }
 
   protected lazy val sample1Dot: String = "digraph sample {" +
@@ -81,7 +77,7 @@ class GraphvizSampleCLI(dotExeFile: String, workFolder: String) {
   protected lazy val sample1InFileName: String = "sample1.dot"
   protected lazy val sample1OutFileName: String = "sample1.svg"
 
-  protected def doSample1(): Unit = {
+  protected def doSample1(args: String): Unit = {
     sampleInterface.outputTitle("graphviz sample 1", None)
 
     val outPath: Path = Graphviz.execute(sample1Dot, dotExeFile, workFolder, sample1InFileName, sample1OutFileName)

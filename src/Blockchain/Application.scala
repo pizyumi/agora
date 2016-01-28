@@ -131,44 +131,45 @@ class BusinessLogic(factory: IBusinessLogicFactory) extends IBusinessLogic {
   }
 }
 
-class CLI(factory: ICLIFactory, logic: IBusinessLogic) {
+class CLI(factory: ICLIFactory, logic: IBusinessLogic) extends ICLIComponent {
   lazy val newBlockchain: String = "new blockchain"
   lazy val addBlock: String = "add block"
 
-  def executeCommand(command: String): Boolean = {
-    if (command.startsWith(newBlockchain)) {
-      var seed: String = command.substring(newBlockchain.length).trim
-      while (seed.isEmpty) {
-        seed = scala.io.StdIn.readLine("enter a seed of genesis block to be generated: ")
-      }
-      val gblock: Either[GenesisBlockTest1, String] = logic.doNewBlockchain(seed)
-      gblock match {
-        case Left(gb) => println(factory.toStringGenesisBlock(gb))
-        case Right(message) => println(__.toErrorMessage(message))
-      }
-      true
-    }
-    else if (command.startsWith(addBlock)) {
-      var blockIndicator: Option[(Int, Int)] = parseBlockIndicator(command.substring(addBlock.length).trim)
-      while (blockIndicator.isEmpty) {
-        blockIndicator = parseBlockIndicator(scala.io.StdIn.readLine("enter the index and sequence of the parent block in the blockchain: "))
-      }
-      blockIndicator match {
-        case Some(bi) =>
-          val index: Int = bi._1
-          val sequence: Int = bi._2
+  def getCommands: Traversable[Command] = {
+    Array(
+      new Command(newBlockchain, executeNewBlockchain),
+      new Command(addBlock, executeAddBlock)
+    )
+  }
 
-          val nblock: Either[NormalBlockTest1, String] = logic.doAddBlock(index, sequence)
-          nblock match {
-            case Left(nb) => println(factory.toStringNormalBlock(nb))
-            case Right(message) => println(__.toErrorMessage(message))
-          }
-        case None =>
-      }
-      true
+  private def executeNewBlockchain(args: String): Unit = {
+    var seed: String = args
+    while (seed.isEmpty) {
+      seed = scala.io.StdIn.readLine("enter a seed of genesis block to be generated: ")
     }
-    else {
-      false
+    val gblock: Either[GenesisBlockTest1, String] = logic.doNewBlockchain(seed)
+    gblock match {
+      case Left(gb) => println(factory.toStringGenesisBlock(gb))
+      case Right(message) => println(__.toErrorMessage(message))
+    }
+  }
+
+  private def executeAddBlock(args: String): Unit = {
+    var blockIndicator: Option[(Int, Int)] = parseBlockIndicator(args)
+    while (blockIndicator.isEmpty) {
+      blockIndicator = parseBlockIndicator(scala.io.StdIn.readLine("enter the index and sequence of the parent block in the blockchain: "))
+    }
+    blockIndicator match {
+      case Some(bi) =>
+        val index: Int = bi._1
+        val sequence: Int = bi._2
+
+        val nblock: Either[NormalBlockTest1, String] = logic.doAddBlock(index, sequence)
+        nblock match {
+          case Left(nb) => println(factory.toStringNormalBlock(nb))
+          case Right(message) => println(__.toErrorMessage(message))
+        }
+      case None =>
     }
   }
 
