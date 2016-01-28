@@ -4,6 +4,36 @@ import java.nio.file.Path
 
 import scala.collection.mutable.ListBuffer
 
+class Test(actionIn: () => Unit) {
+  val action: () => Unit = actionIn
+}
+
+trait ITestComponent {
+  def getTests: Traversable[Test]
+}
+
+class Testing() {
+  private val components: ListBuffer[ITestComponent] = ListBuffer()
+
+  def register(component: ITestComponent): Unit = {
+    if (!components.contains(component)) {
+      components += component
+    }
+  }
+
+  def unregister(component: ITestComponent): Unit = {
+    if (components.contains(component)) {
+      components -= component
+    }
+  }
+
+  def executeTest(): Unit = {
+    for (test <- components.flatMap((c) => c.getTests)) {
+      test.action()
+    }
+  }
+}
+
 trait TestInterface {
   def outputTitle(title: String, description: Option[String]): Unit
   def outputMessage(message: String): Unit
