@@ -4,8 +4,6 @@ import java.nio.file.Path
 
 import scala.collection.mutable.ListBuffer
 
-import _root_.Graph.Graphviz
-
 trait TestInterface {
   def outputTitle(title: String, description: Option[String]): Unit
   def outputMessage(message: String): Unit

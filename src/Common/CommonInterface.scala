@@ -1,107 +1,107 @@
 package Common
 
-//“¯ˆê”äŠr‰Â”\
+//åŒä¸€æ¯”è¼ƒå¯èƒ½
 trait ICompare {
-  //“¯ˆê‚©‚Ç‚¤‚©”äŠr‚ğs‚¤ŠÖ”
-  //“¯ˆê‚Å‚ ‚éê‡‚É‚Ítrue‚ğ•Ô‚µA“¯ˆê‚Å‚È‚¢ê‡‚É‚Ífalse‚ğ•Ô‚·
+  //åŒä¸€ã‹ã©ã†ã‹æ¯”è¼ƒã‚’è¡Œã†é–¢æ•°
+  //åŒä¸€ã§ã‚ã‚‹å ´åˆã«ã¯trueã‚’è¿”ã—ã€åŒä¸€ã§ãªã„å ´åˆã«ã¯falseã‚’è¿”ã™
   protected def specIsSame(r: ICompare): Boolean
 
-  //ƒnƒbƒVƒ…ƒR[ƒh‚ğ•Ô‚·ŠÖ”
+  //ãƒãƒƒã‚·ãƒ¥ã‚³ãƒ¼ãƒ‰ã‚’è¿”ã™é–¢æ•°
   protected def specHashCode: Int
 
-  //“¯ˆê‚Å‚ ‚éê‡‚É‚Ítrue‚ğ•Ô‚µA“¯ˆê‚Å‚È‚¢ê‡‚É‚Ífalse‚ğ•Ô‚·
+  //åŒä¸€ã§ã‚ã‚‹å ´åˆã«ã¯trueã‚’è¿”ã—ã€åŒä¸€ã§ãªã„å ´åˆã«ã¯falseã‚’è¿”ã™
   def isSame(r: ICompare): Boolean = specIsSame(r)
 
-  //“¯ˆê‚Å‚ ‚éê‡‚É‚Ífalse‚ğ•Ô‚µA“¯ˆê‚Å‚È‚¢ê‡‚É‚Ítrue‚ğ•Ô‚·
+  //åŒä¸€ã§ã‚ã‚‹å ´åˆã«ã¯falseã‚’è¿”ã—ã€åŒä¸€ã§ãªã„å ´åˆã«ã¯trueã‚’è¿”ã™
   def isNotSame(r: ICompare): Boolean = !specIsSame(r)
 
-  //”äŠr‰‰Zq‚È‚Ç‚Ì‚½‚ß‚ÉequalsŠÖ”‚ğÀ‘•‚·‚é
+  //æ¯”è¼ƒæ¼”ç®—å­ãªã©ã®ãŸã‚ã«equalsé–¢æ•°ã‚’å®Ÿè£…ã™ã‚‹
   override def equals(r: Any) = r match {
     case r: ICompare => isSame(r)
     case _ => false
   }
 
-  //equalsŠÖ”‚ğÀ‘•‚·‚éê‡‚É‚ÍhashCodeŠÖ”‚àÀ‘•‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+  //equalsé–¢æ•°ã‚’å®Ÿè£…ã™ã‚‹å ´åˆã«ã¯hashCodeé–¢æ•°ã‚‚å®Ÿè£…ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
   override def hashCode: Int = specHashCode
 }
 
-//‘å¬‚ğ•\‚·“Á¿
+//å¤§å°ã‚’è¡¨ã™ç‰¹è³ª
 sealed trait Ordering {}
 
-//‘å‚«‚¢‚±‚Æ‚ğ•\‚·ƒIƒuƒWƒFƒNƒg
+//å¤§ãã„ã“ã¨ã‚’è¡¨ã™ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 object Great extends Ordering {}
 
-//“¯“™‚Å‚ ‚é‚±‚Æ‚ğ•\‚·ƒIƒuƒWƒFƒNƒg
+//åŒç­‰ã§ã‚ã‚‹ã“ã¨ã‚’è¡¨ã™ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 object Equal extends Ordering {}
 
-//¬‚³‚¢‚±‚Æ‚ğ•\‚·ƒIƒuƒWƒFƒNƒg
+//å°ã•ã„ã“ã¨ã‚’è¡¨ã™ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 object Less extends Ordering {}
 
-//‘å¬”äŠr‰Â”\
-//‘å¬”äŠr‰Â”\‚Èê‡A“¯ˆê”äŠr‚à‰Â”\‚Å‚ ‚é
+//å¤§å°æ¯”è¼ƒå¯èƒ½
+//å¤§å°æ¯”è¼ƒå¯èƒ½ãªå ´åˆã€åŒä¸€æ¯”è¼ƒã‚‚å¯èƒ½ã§ã‚ã‚‹
 trait ICompareOrder extends ICompare {
-  //‘å¬”äŠr‚ğs‚¤ŠÖ”
-  //‘å¬‚ğ•\‚·ƒIƒuƒWƒFƒNƒg‚Ì‰½‚ê‚©‚ğ•Ô‚·
+  //å¤§å°æ¯”è¼ƒã‚’è¡Œã†é–¢æ•°
+  //å¤§å°ã‚’è¡¨ã™ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ä½•ã‚Œã‹ã‚’è¿”ã™
   protected def specCompare(r: ICompareOrder): Ordering
 
-  //“¯ˆê‚©‚Ç‚¤‚©”äŠr‚ğs‚¤ŠÖ”
+  //åŒä¸€ã‹ã©ã†ã‹æ¯”è¼ƒã‚’è¡Œã†é–¢æ•°
   protected override def specIsSame(r: ICompare): Boolean = specCompare(r.asInstanceOf[ICompareOrder]) == Equal
 
-  //‘å‚«‚¢ê‡‚É‚Ítrue‚ğ•Ô‚µA¬‚³‚¢‚©“¯“™‚Å‚ ‚éê‡‚É‚Ífalse‚ğ•Ô‚·
+  //å¤§ãã„å ´åˆã«ã¯trueã‚’è¿”ã—ã€å°ã•ã„ã‹åŒç­‰ã§ã‚ã‚‹å ´åˆã«ã¯falseã‚’è¿”ã™
   def isGreat(r: ICompareOrder): Boolean = specCompare(r) == Great
 
-  //‘å‚«‚¢‚©“¯“™‚Å‚ ‚éê‡‚É‚Ítrue‚ğ•Ô‚µA¬‚³‚¢ê‡‚É‚Ífalse‚ğ•Ô‚·
+  //å¤§ãã„ã‹åŒç­‰ã§ã‚ã‚‹å ´åˆã«ã¯trueã‚’è¿”ã—ã€å°ã•ã„å ´åˆã«ã¯falseã‚’è¿”ã™
   def isGreatOrEqual(r: ICompareOrder): Boolean = {
     val ord: Ordering = specCompare(r)
     ord == Great || ord == Equal
   }
 
-  //¬‚³‚¢ê‡‚É‚Ítrue‚ğ•Ô‚µA‘å‚«‚¢‚©“¯“™‚Å‚ ‚éê‡‚É‚Ífalse‚ğ•Ô‚·
+  //å°ã•ã„å ´åˆã«ã¯trueã‚’è¿”ã—ã€å¤§ãã„ã‹åŒç­‰ã§ã‚ã‚‹å ´åˆã«ã¯falseã‚’è¿”ã™
   def isLess(r: ICompareOrder): Boolean = specCompare(r) == Less
 
-  //¬‚³‚¢‚©“¯“™‚Å‚ ‚éê‡‚É‚Ítrue‚ğ•Ô‚µA‘å‚«‚¢ê‡‚É‚Ífalse‚ğ•Ô‚·
+  //å°ã•ã„ã‹åŒç­‰ã§ã‚ã‚‹å ´åˆã«ã¯trueã‚’è¿”ã—ã€å¤§ãã„å ´åˆã«ã¯falseã‚’è¿”ã™
   def isLessOrEqual(r: ICompareOrder): Boolean = {
     val ord: Ordering = specCompare(r)
     ord == Less || ord == Equal
   }
 }
 
-//’l‚ğˆÚ“®‚·‚é‚±‚Æ‚ª‚Å‚«‚é
+//å€¤ã‚’ç§»å‹•ã™ã‚‹ã“ã¨ãŒã§ãã‚‹
 trait ISequence {
-  //’l‚ğw’è‚³‚ê‚½•ªˆÚ“®‚·‚é
+  //å€¤ã‚’æŒ‡å®šã•ã‚ŒãŸåˆ†ç§»å‹•ã™ã‚‹
   protected def specMove(delta: Long): ISequence
 
-  //’l‚ğw’è‚³‚ê‚½•ª‘O•û‚ÉˆÚ“®‚·‚é
+  //å€¤ã‚’æŒ‡å®šã•ã‚ŒãŸåˆ†å‰æ–¹ã«ç§»å‹•ã™ã‚‹
   def moveForward(delta: Long): ISequence = specMove(delta)
 
-  //’l‚ğw’è‚³‚ê‚½•ªŒã•û‚ÉˆÚ“®‚·‚é
+  //å€¤ã‚’æŒ‡å®šã•ã‚ŒãŸåˆ†å¾Œæ–¹ã«ç§»å‹•ã™ã‚‹
   def moveBackward(delta: Long): ISequence = specMove(-delta)
 }
 
-//‰ÁŒ¸Z‰Â”\
+//åŠ æ¸›ç®—å¯èƒ½
 trait IAddition {
-  //‰ÁZ‚ğs‚¤ŠÖ”
+  //åŠ ç®—ã‚’è¡Œã†é–¢æ•°
   protected def specAdd(r: IAddition): IAddition
 
-  //Œ¸Z‚ğs‚¤ŠÖ”
+  //æ¸›ç®—ã‚’è¡Œã†é–¢æ•°
   protected def specSubtract(r: IAddition): IAddition
 
-  //‰ÁZ‚µ‚½Œ‹‰Ê‚ğ‚»‚Ì‚Ü‚Ü•Ô‚·
+  //åŠ ç®—ã—ãŸçµæœã‚’ãã®ã¾ã¾è¿”ã™
   def add(r: IAddition): IAddition = specAdd(r)
 
-  //Œ¸Z‚µ‚½Œ‹‰Ê‚ğ‚»‚Ì‚Ü‚Ü•Ô‚·
+  //æ¸›ç®—ã—ãŸçµæœã‚’ãã®ã¾ã¾è¿”ã™
   def subtract(r: IAddition): IAddition = specSubtract(r)
 
-  //‹t‚ğ•Ô‚·
+  //é€†ã‚’è¿”ã™
   def minus(): IAddition = specSubtract(this).specSubtract(this)
 }
 
-//ƒoƒCƒg”z—ñ‚É•ÏŠ·‰Â”\
+//ãƒã‚¤ãƒˆé…åˆ—ã«å¤‰æ›å¯èƒ½
 trait IBytes {
-  //ƒoƒCƒg•Ï”‚É•ÏŠ·‚·‚éŠÖ”
+  //ãƒã‚¤ãƒˆå¤‰æ•°ã«å¤‰æ›ã™ã‚‹é–¢æ•°
   protected def specToBytes: Array[Byte]
 
-  //ƒoƒCƒg”z—ñ‚É•ÏŠ·‚µ‚½Œ‹‰Ê‚ÌƒoƒCƒg”z—ñ‚ğ‚»‚Ì‚Ü‚Ü•Ô‚·
+  //ãƒã‚¤ãƒˆé…åˆ—ã«å¤‰æ›ã—ãŸçµæœã®ãƒã‚¤ãƒˆé…åˆ—ã‚’ãã®ã¾ã¾è¿”ã™
   def toBytes: Array[Byte] = specToBytes
 }
 

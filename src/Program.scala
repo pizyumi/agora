@@ -1,16 +1,12 @@
 import java.nio.file.Files
 import java.nio.file.Path
 
-import Common.Common
 import skinny.micro.WebApp
-import skinny.micro.WebServer
 
 object Program {
   import Common._
   import Crypto._
-  import Graph._
-  import StandardImplemantation._
-  import StandardImplementationCLI._
+  import Blockchain._
 
   lazy val exit: String = "exit"
 

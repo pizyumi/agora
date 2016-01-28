@@ -3,166 +3,164 @@ package Common
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import _root_.Graph.Graphviz
-
-//–Ø
+//æœ¨
 trait ITree[T] {
-  //’l‚ğæ“¾‚·‚é
+  //å€¤ã‚’å–å¾—ã™ã‚‹
   def getValue: T
-  //q‚ğæ“¾‚·‚é
+  //å­ã‚’å–å¾—ã™ã‚‹
   def getChildren: Traversable[ITree[T]]
-  //e‚ğæ“¾‚·‚é
+  //è¦ªã‚’å–å¾—ã™ã‚‹
   def getParent: Option[ITree[T]]
 
-  //q‚ğ’Ç‰Á‚·‚é
+  //å­ã‚’è¿½åŠ ã™ã‚‹
   def addChild(child: ITree[T]): Unit
-  //q‚ğíœ‚·‚é
+  //å­ã‚’å‰Šé™¤ã™ã‚‹
   def removeChild(child: ITree[T]): Unit
 
-  //q‘·‚Ì’l‚ğ—ñ‹“‚·‚é
+  //å­å­«ã®å€¤ã‚’åˆ—æŒ™ã™ã‚‹
   def descendants(): Traversable[T] = {
-    //‘S‚Ä‚Ìq‚ğˆê“I‚ÉŠi”[‚·‚é
-    //•¡”‚Ìq‚ğˆê“x‚Éˆ—‚·‚é‚±‚Æ‚Í‚Å‚«‚È‚¢‚½‚ßAq‚Í1‚Â‚¸‚Âˆ—‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+    //å…¨ã¦ã®å­ã‚’ä¸€æ™‚çš„ã«æ ¼ç´ã™ã‚‹
+    //è¤‡æ•°ã®å­ã‚’ä¸€åº¦ã«å‡¦ç†ã™ã‚‹ã“ã¨ã¯ã§ããªã„ãŸã‚ã€å­ã¯1ã¤ãšã¤å‡¦ç†ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
     val inStack = new mutable.Stack[ITree[T]]()
-    //‘S‚Ä‚Ìq‚Ì’l‚ğÅI“I‚ÉŠi”[‚·‚é
+    //å…¨ã¦ã®å­ã®å€¤ã‚’æœ€çµ‚çš„ã«æ ¼ç´ã™ã‚‹
     val outQueue = new mutable.Queue[T]()
-    //©g‚ğŠi”[‚·‚é
+    //è‡ªèº«ã‚’æ ¼ç´ã™ã‚‹
     inStack.push(this)
-    //q‚ª‘¶İ‚·‚éŒÀ‚è
+    //å­ãŒå­˜åœ¨ã™ã‚‹é™ã‚Š
     while (inStack.nonEmpty) {
-      //ˆê“I‚ÉŠi”[‚µ‚½q‚ğæ“¾‚·‚é
+      //ä¸€æ™‚çš„ã«æ ¼ç´ã—ãŸå­ã‚’å–å¾—ã™ã‚‹
       val tree = inStack.pop()
-      //q‚Ì’l‚ğæ“¾‚µŠi”[‚·‚é
+      //å­ã®å€¤ã‚’å–å¾—ã—æ ¼ç´ã™ã‚‹
       outQueue.enqueue(tree.getValue)
-      //q‚Ìq‚ğæ“¾‚·‚é
+      //å­ã®å­ã‚’å–å¾—ã™ã‚‹
       for (child <- tree.getChildren) {
-        //q‚Ìq‚ğŠi”[‚·‚é
+        //å­ã®å­ã‚’æ ¼ç´ã™ã‚‹
         inStack.push(child)
       }
     }
-    //‘S‚Ä‚Ìq‚Ì’l‚ğ•Ô‚·
+    //å…¨ã¦ã®å­ã®å€¤ã‚’è¿”ã™
     outQueue
   }
 
-  //q‘·‚ğ—ñ‹“‚·‚é
+  //å­å­«ã‚’åˆ—æŒ™ã™ã‚‹
   def descendantTrees(): Traversable[ITree[T]] = {
-    //‘S‚Ä‚Ìq‚ğˆê“I‚ÉŠi”[‚·‚é
-    //•¡”‚Ìq‚ğˆê“x‚Éˆ—‚·‚é‚±‚Æ‚Í‚Å‚«‚È‚¢‚½‚ßAq‚Í1‚Â‚¸‚Âˆ—‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+    //å…¨ã¦ã®å­ã‚’ä¸€æ™‚çš„ã«æ ¼ç´ã™ã‚‹
+    //è¤‡æ•°ã®å­ã‚’ä¸€åº¦ã«å‡¦ç†ã™ã‚‹ã“ã¨ã¯ã§ããªã„ãŸã‚ã€å­ã¯1ã¤ãšã¤å‡¦ç†ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
     val inStack = new mutable.Stack[ITree[T]]()
-    //‘S‚Ä‚Ìq‚ğÅI“I‚ÉŠi”[‚·‚é
+    //å…¨ã¦ã®å­ã‚’æœ€çµ‚çš„ã«æ ¼ç´ã™ã‚‹
     val outQueue = new mutable.Queue[ITree[T]]()
-    //©g‚ğŠi”[‚·‚é
+    //è‡ªèº«ã‚’æ ¼ç´ã™ã‚‹
     inStack.push(this)
-    //q‚ª‘¶İ‚·‚éŒÀ‚è
+    //å­ãŒå­˜åœ¨ã™ã‚‹é™ã‚Š
     while (inStack.nonEmpty) {
-      //ˆê“I‚ÉŠi”[‚µ‚½q‚ğŠi”[‚·‚é
+      //ä¸€æ™‚çš„ã«æ ¼ç´ã—ãŸå­ã‚’æ ¼ç´ã™ã‚‹
       val tree = inStack.pop()
-      //q‚ğŠi”[‚·‚é
+      //å­ã‚’æ ¼ç´ã™ã‚‹
       outQueue.enqueue(tree)
-      //q‚Ìq‚ğæ“¾‚·‚é
+      //å­ã®å­ã‚’å–å¾—ã™ã‚‹
       for (child <- tree.getChildren) {
-        //q‚Ìq‚ğŠi”[‚·‚é
+        //å­ã®å­ã‚’æ ¼ç´ã™ã‚‹
         inStack.push(child)
       }
     }
-    //‘S‚Ä‚Ìq‚ğ•Ô‚·
+    //å…¨ã¦ã®å­ã‚’è¿”ã™
     outQueue
   }
 
-  //    //q‘·‚ğ—ñ‹“‚·‚é
-  //    //’l‚Æ”h¶’l‚©‚ç¬‚é‘g‚Ì–Ø‚ğì¬‚·‚éŠÖ”‚ğó‚¯æ‚é
+  //    //å­å­«ã‚’åˆ—æŒ™ã™ã‚‹
+  //    //å€¤ã¨æ´¾ç”Ÿå€¤ã‹ã‚‰æˆã‚‹çµ„ã®æœ¨ã‚’ä½œæˆã™ã‚‹é–¢æ•°ã‚’å—ã‘å–ã‚‹
   //    def descendantTrees[S](base: T => ITree[(T, S)], rec: (T, ITree[(T, S)]) => ITree[(T, S)]): Traversable[ITree[(T, S)]] = {
-  //      //‘S‚Ä‚Ìq‚ğˆê“I‚ÉŠi”[‚·‚é
-  //      //•¡”‚Ìq‚ğˆê“x‚Éˆ—‚·‚é‚±‚Æ‚Í‚Å‚«‚È‚¢‚½‚ßAq‚Í1‚Â‚¸‚Âˆ—‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+  //      //å…¨ã¦ã®å­ã‚’ä¸€æ™‚çš„ã«æ ¼ç´ã™ã‚‹
+  //      //è¤‡æ•°ã®å­ã‚’ä¸€åº¦ã«å‡¦ç†ã™ã‚‹ã“ã¨ã¯ã§ããªã„ãŸã‚ã€å­ã¯1ã¤ãšã¤å‡¦ç†ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
   //      val inStack = new mutable.Stack[ITree[T]]()
   //      val inStackCalc = new mutable.Stack[ITree[(T, S)]]()
-  //      //‘S‚Ä‚Ìq‚ğÅI“I‚ÉŠi”[‚·‚é
+  //      //å…¨ã¦ã®å­ã‚’æœ€çµ‚çš„ã«æ ¼ç´ã™ã‚‹
   //      val outQueue = new mutable.Queue[ITree[(T, S)]]()
-  //      //©g‚ğŠi”[‚·‚é
+  //      //è‡ªèº«ã‚’æ ¼ç´ã™ã‚‹
   //      inStack.push(this)
   //      inStackCalc.push(base(this.getValue))
-  //      //q‚ª‘¶İ‚·‚éŒÀ‚è
+  //      //å­ãŒå­˜åœ¨ã™ã‚‹é™ã‚Š
   //      while (inStack.nonEmpty) {
-  //        //ˆê“I‚ÉŠi”[‚µ‚½q‚ğŠi”[‚·‚é
+  //        //ä¸€æ™‚çš„ã«æ ¼ç´ã—ãŸå­ã‚’æ ¼ç´ã™ã‚‹
   //        val tree: ITree[T] = inStack.pop()
   //        val treeCalc: ITree[(T, S)] = inStackCalc.pop()
-  //        //q‚ğŠi”[‚·‚é
+  //        //å­ã‚’æ ¼ç´ã™ã‚‹
   //        outQueue.enqueue(treeCalc)
-  //        //q‚Ìq‚ğæ“¾‚·‚é
+  //        //å­ã®å­ã‚’å–å¾—ã™ã‚‹
   //        for (child <- tree.getChildren) {
-  //          //q‚Ìq‚ğŠi”[‚·‚é
+  //          //å­ã®å­ã‚’æ ¼ç´ã™ã‚‹
   //          inStack.push(child)
   //          inStackCalc.push(rec(child.getValue, treeCalc))
   //        }
   //      }
-  //      //‘S‚Ä‚Ìq‚ğ•Ô‚·
+  //      //å…¨ã¦ã®å­ã‚’è¿”ã™
   //      outQueue
   //    }
 
-  //ƒOƒ‰ƒt‚Ì–¼Ì
+  //ã‚°ãƒ©ãƒ•ã®åç§°
   lazy val graphName: String = "tree"
 
-  //    //DOTŒ`®‚ÌƒOƒ‰ƒt‚ğì¬‚·‚é
-  //    //’l‚ğ•¶š—ñ‚É•ÏŠ·‚·‚éŠÖ”‚ğó‚¯æ‚é
+  //    //DOTå½¢å¼ã®ã‚°ãƒ©ãƒ•ã‚’ä½œæˆã™ã‚‹
+  //    //å€¤ã‚’æ–‡å­—åˆ—ã«å¤‰æ›ã™ã‚‹é–¢æ•°ã‚’å—ã‘å–ã‚‹
   //    def toDotGraph(valueToString: T => String): String = toDotGraphIn(descendantTrees(), valueToString)
   //
-  //    //DOTŒ`®‚ÌƒOƒ‰ƒt‚ğì¬‚·‚é
-  //    //’l‚Æ”h¶’l‚©‚ç¬‚é‘g‚Ì–Ø‚ğì¬‚·‚éŠÖ”‚ğó‚¯æ‚é
-  //    //’l‚ğ•¶š—ñ‚É•ÏŠ·‚·‚éŠÖ”‚ğó‚¯æ‚é
+  //    //DOTå½¢å¼ã®ã‚°ãƒ©ãƒ•ã‚’ä½œæˆã™ã‚‹
+  //    //å€¤ã¨æ´¾ç”Ÿå€¤ã‹ã‚‰æˆã‚‹çµ„ã®æœ¨ã‚’ä½œæˆã™ã‚‹é–¢æ•°ã‚’å—ã‘å–ã‚‹
+  //    //å€¤ã‚’æ–‡å­—åˆ—ã«å¤‰æ›ã™ã‚‹é–¢æ•°ã‚’å—ã‘å–ã‚‹
   //    def toDotGraph[S](base: T => ITree[(T, S)], rec: (T, ITree[(T, S)]) => ITree[(T, S)], valueToString: ((T, S)) => String): String = toDotGraphIn[(T, S)](descendantTrees(base, rec), valueToString)
 
-  //DOTŒ`®‚ÌƒOƒ‰ƒt‚ğì¬‚·‚é
-  //’l‚ğ•¶š—ñ‚É•ÏŠ·‚·‚éŠÖ”‚ğó‚¯æ‚é
+  //DOTå½¢å¼ã®ã‚°ãƒ©ãƒ•ã‚’ä½œæˆã™ã‚‹
+  //å€¤ã‚’æ–‡å­—åˆ—ã«å¤‰æ›ã™ã‚‹é–¢æ•°ã‚’å—ã‘å–ã‚‹
   def toDotGraph(valueToString: T => String): String = toDotGraph(valueToString, (_) => __.emptyString, (_, _) => __.emptyString)
 
-  //DOTŒ`®‚ÌƒOƒ‰ƒt‚ğì¬‚·‚é
-  //’l‚ğ•¶š—ñ‚É•ÏŠ·‚·‚éŠÖ”‚ğó‚¯æ‚é
-  //’l‚ğİ’è‚É•ÏŠ·‚·‚éŠÖ”‚ğó‚¯æ‚é
+  //DOTå½¢å¼ã®ã‚°ãƒ©ãƒ•ã‚’ä½œæˆã™ã‚‹
+  //å€¤ã‚’æ–‡å­—åˆ—ã«å¤‰æ›ã™ã‚‹é–¢æ•°ã‚’å—ã‘å–ã‚‹
+  //å€¤ã‚’è¨­å®šã«å¤‰æ›ã™ã‚‹é–¢æ•°ã‚’å—ã‘å–ã‚‹
   def toDotGraph(valueToString: T => String, valueToNodeSettings: T => String, valueToEdgeStrrings: (T, T) => String): String = {
     val descendants: Traversable[ITree[T]] = descendantTrees()
-    //q‘·‚ª‘¶İ‚µ‚È‚¢ê‡‚É‚Í‹ó‚ÌƒOƒ‰ƒt‚ğì¬‚·‚é
+    //å­å­«ãŒå­˜åœ¨ã—ãªã„å ´åˆã«ã¯ç©ºã®ã‚°ãƒ©ãƒ•ã‚’ä½œæˆã™ã‚‹
     if (descendants.isEmpty) {
       Graphviz.createDigraph(graphName, __.emptyString)
     }
-    //q‘·‚ª‘¶İ‚·‚éê‡
+    //å­å­«ãŒå­˜åœ¨ã™ã‚‹å ´åˆ
     else {
-      //ƒOƒ‰ƒt‚Ì‘S‚Ä‚Ìß‚ğŠi”[‚·‚é
+      //ã‚°ãƒ©ãƒ•ã®å…¨ã¦ã®ç¯€ã‚’æ ¼ç´ã™ã‚‹
       val nodes: ListBuffer[String] = ListBuffer()
-      //ƒOƒ‰ƒt‚Ì‘S‚Ä‚Ì•Ó‚ğŠi”[‚·‚é
+      //ã‚°ãƒ©ãƒ•ã®å…¨ã¦ã®è¾ºã‚’æ ¼ç´ã™ã‚‹
       val edges: ListBuffer[String] = ListBuffer()
-      //’l‚ğæ“¾‚µA•¶š—ñ‚É•ÏŠ·‚µAß‚ğì¬‚µA’Ç‰Á‚·‚é
+      //å€¤ã‚’å–å¾—ã—ã€æ–‡å­—åˆ—ã«å¤‰æ›ã—ã€ç¯€ã‚’ä½œæˆã—ã€è¿½åŠ ã™ã‚‹
       nodes += Graphviz.createNode(valueToString(descendants.head.getValue), valueToNodeSettings(descendants.head.getValue))
-      //‘S‚Ä‚Ìq‘·‚É‘Î‚µ‚Ä
+      //å…¨ã¦ã®å­å­«ã«å¯¾ã—ã¦
       for (d <- descendants) {
-        //’l‚ğæ“¾‚µA•¶š—ñ‚É•ÏŠ·‚·‚é
+        //å€¤ã‚’å–å¾—ã—ã€æ–‡å­—åˆ—ã«å¤‰æ›ã™ã‚‹
         val pValue: String = valueToString(d.getValue)
-        //‘S‚Ä‚Ìq‚É‘Î‚µ‚Ä
+        //å…¨ã¦ã®å­ã«å¯¾ã—ã¦
         for (c <- d.getChildren) {
-          //’l‚ğæ“¾‚µA•¶š—ñ‚É•ÏŠ·‚·‚é
+          //å€¤ã‚’å–å¾—ã—ã€æ–‡å­—åˆ—ã«å¤‰æ›ã™ã‚‹
           val cValue: String = valueToString(c.getValue)
-          //ß‚ğì¬‚µA’Ç‰Á‚·‚é
+          //ç¯€ã‚’ä½œæˆã—ã€è¿½åŠ ã™ã‚‹
           nodes += Graphviz.createNode(cValue, valueToNodeSettings(c.getValue))
-          //•Ó‚ğì¬‚µA’Ç‰Á‚·‚é
+          //è¾ºã‚’ä½œæˆã—ã€è¿½åŠ ã™ã‚‹
           edges += Graphviz.createEdge(pValue, cValue, valueToEdgeStrrings(d.getValue, c.getValue))
         }
       }
-      //ƒOƒ‰ƒt‚ğì¬‚·‚é
+      //ã‚°ãƒ©ãƒ•ã‚’ä½œæˆã™ã‚‹
       Graphviz.createDigraph(graphName, nodes.mkString(__.newlineString) + __.newlineString + edges.mkString(__.newlineString))
     }
   }
 }
 
-//’l‚ğ’¼Ú•Û‚·‚é–Ø
+//å€¤ã‚’ç›´æ¥ä¿æŒã™ã‚‹æœ¨
 class ValueTree[T](value: T, var children: ListBuffer[ITree[T]], parent: Option[ITree[T]]) extends ITree[T] {
-  //’l‚ğæ“¾‚·‚é
+  //å€¤ã‚’å–å¾—ã™ã‚‹
   def getValue: T = value
-  //q‚ğæ“¾‚·‚é
+  //å­ã‚’å–å¾—ã™ã‚‹
   def getChildren: Traversable[ITree[T]] = children
-  //e‚ğæ“¾‚·‚é
+  //è¦ªã‚’å–å¾—ã™ã‚‹
   def getParent: Option[ITree[T]] = parent
 
-  //q‚ğ’Ç‰Á‚·‚é
+  //å­ã‚’è¿½åŠ ã™ã‚‹
   def addChild(child: ITree[T]): Unit = children += child
-  //q‚ğíœ‚·‚é
+  //å­ã‚’å‰Šé™¤ã™ã‚‹
   def removeChild(child: ITree[T]): Unit = children -= child
 }
