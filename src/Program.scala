@@ -30,7 +30,9 @@ object Program {
 
     //WebServer.mount(new BlockchainApp(dotExeFile, graphvizFolder)).port(webServerPort).start()
 
-    val cli: CLI = new CLI(StandardCLIFactory, new BusinessLogic(StandardBusinessLogicFactory))
+
+
+    val cli: Blockchain.CLI = new CLI(StandardCLIFactory, new BusinessLogic(StandardBusinessLogicFactory))
     val secp256k1CLI: Secp256k1TestCLI = new Secp256k1TestCLI()
     val graphvizCLI: GraphvizSampleCLI = new GraphvizSampleCLI(dotExeFile, graphvizFolder)
     val linkedListCLI: LinkedListTestCLI = new LinkedListTestCLI(reportFolder, dotExeFile)
