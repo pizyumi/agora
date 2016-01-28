@@ -2,7 +2,6 @@ import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import Common.Common
 import org.spongycastle.asn1.ASN1InputStream
 import org.spongycastle.asn1.ASN1Integer
 import org.spongycastle.asn1.DERSequenceGenerator

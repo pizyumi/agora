@@ -5,7 +5,7 @@ import java.nio.file.Path
 import scala.collection.mutable.ListBuffer
 
 object Interface {
-  import Common.Common._
+  import Common._
 
   //ブロックの識別子を表す
   //同一比較可能であり、バイト配列に変換可能である
@@ -69,7 +69,7 @@ object Interface {
 }
 
 object StandardImplemantation {
-  import Common.Common._
+  import Common._
   import Interface._
 
   //ブロックの識別子の標準実装
@@ -665,7 +665,7 @@ object StandardImplemantation {
 }
 
 object StandardImplementationCLI {
-  import Common.Common._
+  import Common._
   import Graph._
   import Interface._
   import StandardImplemantation._
