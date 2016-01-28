@@ -9,6 +9,7 @@ object Program {
   import Blockchain._
 
   lazy val exit: String = "exit"
+  lazy val test: String = "test"
 
   lazy val graphvizFolder: String = "C:\\work\\graphviz"
   lazy val reportFolder: String = "C:\\work\\report"
@@ -38,11 +39,20 @@ object Program {
     cli.register(new BinaryTreeTestCLI(reportFolder, dotExeFile))
     cli.register(new StandardImplementationTestCLI())
 
+    val testing: Testing = new Testing()
+    testing.register(new Secp256k1TestCLI())
+    testing.register(new LinkedListTestCLI(reportFolder, dotExeFile))
+    testing.register(new BinaryTreeTestCLI(reportFolder, dotExeFile))
+    testing.register(new StandardImplementationTestCLI())
+
     var f: Boolean = true
     while (f) {
       val command = scala.io.StdIn.readLine()
       if (command == exit) {
         f = false
+      }
+      else if (command == test) {
+        testing.executeTest()
       }
       else {
         if (!cli.executeCommand(command)) {

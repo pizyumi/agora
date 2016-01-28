@@ -109,18 +109,24 @@ object Crypto {
     }
   }
 
-  class Secp256k1TestCLI() extends ICLIComponent {
+  class Secp256k1TestCLI() extends ICLIComponent with ITestComponent {
     protected lazy val testInterface: TestInterface = new TestCLI()
 
     protected lazy val test: String = "test secp256k1"
 
     def getCommands: Traversable[Command] = {
       Array(
-        new Command(test, doTest)
+        new Command(test, (args) => doTest())
       )
     }
 
-    protected def doTest(args: String): Unit = {
+    def getTests: Traversable[Test] = {
+      Array(
+        new Test(doTest)
+      )
+    }
+
+    protected def doTest(): Unit = {
       testInterface.outputTitle("secp256k1 ecdsa test 1", None)
 
       testInterface.outputMessage("generating ec key pair...")

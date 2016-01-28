@@ -494,7 +494,7 @@ class TestableInt(intIn: Int) extends IIdentifiable[ICompareOrder] with ICompare
   protected def specGetComparableId: ICompareOrder = this
 }
 
-abstract class ValueStoreTestCLI(reportFolder: String, dotExeFile: String) extends ICLIComponent {
+abstract class ValueStoreTestCLI(reportFolder: String, dotExeFile: String) extends ICLIComponent with ITestComponent {
   protected lazy val testInterface: TestInterface = new TestCLIWithHTMLReport(reportFolder, dotExeFile)
 
   protected lazy val valueToString: TestableInt => String = (elem) => elem.int.toString
@@ -506,14 +506,21 @@ abstract class ValueStoreTestCLI(reportFolder: String, dotExeFile: String) exten
 
   def getCommands: Traversable[Command] = {
     Array(
-      new Command(test1, doTest1),
-      new Command(test2, doTest2)
+      new Command(test1, (args) => doTest1()),
+      new Command(test2, (args) => doTest2())
+    )
+  }
+
+  def getTests: Traversable[Test] = {
+    Array(
+      new Test(doTest1),
+      new Test(doTest2)
     )
   }
 
   protected def createValueStore(): IValueStore[TestableInt, ICompareOrder]
 
-  protected def doTest1(args: String): Unit = {
+  protected def doTest1(): Unit = {
     val iteration: Int = 32
 
     testInterface.outputTitle(valueStoreName + " test 1", None)
@@ -555,7 +562,7 @@ abstract class ValueStoreTestCLI(reportFolder: String, dotExeFile: String) exten
     testInterface.outputReport(valueStoreName + " 1")
   }
 
-  protected def doTest2(args: String): Unit = {
+  protected def doTest2(): Unit = {
     val iteration: Int = 32
 
     testInterface.outputTitle(valueStoreName + " test 2", None)

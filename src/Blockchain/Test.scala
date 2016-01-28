@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import Common._
 
-class StandardImplementationTestCLI() extends ICLIComponent {
+class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent {
   protected lazy val testInterface: TestInterface = new TestCLI()
 
   protected lazy val testId: String = "test id"
@@ -15,15 +15,25 @@ class StandardImplementationTestCLI() extends ICLIComponent {
 
   def getCommands: Traversable[Command] = {
     Array(
-      new Command(testId, doTestId),
-      new Command(testIndex, doTestIndex),
-      new Command(testGenesisBlock, doTestGenesisBlock),
-      new Command(testNormalBlock, doTestNormalBlock),
-      new Command(testBlockTree, doTestBlockTree)
+      new Command(testId, (args) => doTestId()),
+      new Command(testIndex, (args) => doTestIndex()),
+      new Command(testGenesisBlock, (args) => doTestGenesisBlock()),
+      new Command(testNormalBlock, (args) => doTestNormalBlock()),
+      new Command(testBlockTree, (args) => doTestBlockTree())
     )
   }
 
-  protected def doTestId(args: String): Unit = {
+  def getTests: Traversable[Test] = {
+    Array(
+      new Test(doTestId),
+      new Test(doTestIndex),
+      new Test(doTestGenesisBlock),
+      new Test(doTestNormalBlock),
+      new Test(doTestBlockTree)
+    )
+  }
+
+  protected def doTestId(): Unit = {
     testInterface.outputTitle("id test", None)
 
     testInterface.outputMessage("generating id...")
@@ -39,7 +49,7 @@ class StandardImplementationTestCLI() extends ICLIComponent {
     testInterface.outputItem("1.2", Some("both ids are not same"), id != id3)
   }
 
-  protected def doTestIndex(args: String): Unit = {
+  protected def doTestIndex(): Unit = {
     testInterface.outputTitle("index test", None)
 
     testInterface.outputMessage("generating index...")
@@ -55,7 +65,7 @@ class StandardImplementationTestCLI() extends ICLIComponent {
     testInterface.outputItem("2.2", Some("both indexes are not same"), index != index3)
   }
 
-  protected def doTestGenesisBlock(args: String): Unit = {
+  protected def doTestGenesisBlock(): Unit = {
     testInterface.outputTitle("genesis block test", None)
 
     testInterface.outputMessage("generating genesis block...")
@@ -71,7 +81,7 @@ class StandardImplementationTestCLI() extends ICLIComponent {
     testInterface.outputItem("3.2", Some("both genesis blocks are not same"), gblock != gblock3)
   }
 
-  protected def doTestNormalBlock(args: String): Unit = {
+  protected def doTestNormalBlock(): Unit = {
     val trustworthiness: TrustworthinessV1 = new TrustworthinessV1(BigInteger.ZERO)
 
     testInterface.outputTitle("normal block test", None)
@@ -93,7 +103,7 @@ class StandardImplementationTestCLI() extends ICLIComponent {
     testInterface.outputItem("4.3", Some("both normal blocks are not same"), nblock != nblock4)
   }
 
-  protected def doTestBlockTree(args: String): Unit = {
+  protected def doTestBlockTree(): Unit = {
     val trustworthiness: TrustworthinessV1 = new TrustworthinessV1(BigInteger.ZERO)
 
     testInterface.outputTitle("block tree test", None)
