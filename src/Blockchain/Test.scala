@@ -11,6 +11,7 @@ class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent 
   protected lazy val testIndex: String = "test index"
   protected lazy val testGenesisBlock: String = "test genesis block"
   protected lazy val testNormalBlock: String = "test normal block"
+  protected lazy val testBlockTreeFork: String = "test block tree fork"
   protected lazy val testBlockTree: String = "test block tree"
 
   def getCommands: Traversable[Command] = {
@@ -19,6 +20,7 @@ class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent 
       new Command(testIndex, (args) => doTestIndex()),
       new Command(testGenesisBlock, (args) => doTestGenesisBlock()),
       new Command(testNormalBlock, (args) => doTestNormalBlock()),
+      new Command(testBlockTreeFork, (args) => doTestBlockTreeFork()),
       new Command(testBlockTree, (args) => doTestBlockTree())
     )
   }
@@ -118,7 +120,7 @@ class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent 
     testInterface.outputItem("5.3", Some("genesis block is contained in block tree, again"), blocktree.isContain(gblock))
     testInterface.outputItem("5.4", Some("genesis block's parent block cannot be retrieved from block tree"), blocktree.getParentBlock(gblock).isEmpty)
     testInterface.outputMessage("generating normal block...")
-    val nblock: NormalBlockTest1 = new NormalBlockTest1(new IndexV1(__.getRandomLong), new IdV1(__.getRandomBytes(32).toArray), trustworthiness, __.getRandomBytes(32).toArray)
+    val nblock: NormalBlockTest1 = new NormalBlockTest1(new IndexV1(__.getRandomInt(10000)), new IdV1(__.getRandomBytes(32).toArray), trustworthiness, __.getRandomBytes(32).toArray)
     testInterface.outputMessage(StandardUtil.normalBlockToString(nblock))
     testInterface.outputItem("5.5", Some("normal block cannot be retrieved from block tree"), blocktree.getBlock(nblock.id).isEmpty)
     testInterface.outputItem("5.6", Some("normal block is not contained in block tree"), !blocktree.isContain(nblock.id))
@@ -142,7 +144,7 @@ class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent 
     testInterface.outputMessage(e3.right.get)
     testInterface.outputItem("5.13", Some("normal block cannot be added to block tree twice"), e3.isRight)
     testInterface.outputMessage("generating yet another normal block...")
-    val nblock3: NormalBlockTest1 = new NormalBlockTest1(new IndexV1(__.getRandomLong), gblock.id, trustworthiness, __.getRandomBytes(32).toArray)
+    val nblock3: NormalBlockTest1 = new NormalBlockTest1(new IndexV1(__.getRandomInt(10000)), gblock.id, trustworthiness, __.getRandomBytes(32).toArray)
     testInterface.outputMessage(StandardUtil.normalBlockToString(nblock3))
     testInterface.outputMessage("trying to add normal block to block tree...")
     val e4: Either[Unit, String] = blocktree.addBlock(nblock3)
@@ -151,5 +153,90 @@ class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent 
     testInterface.outputItem("5.15", Some("normal block's parent block was retrieved from block tree"), blocktree.getParentBlock(nblock2).get == gblock)
     val children: Array[IBlock] = blocktree.getChildBlocks(gblock).get.toArray
     testInterface.outputItem("5.16", Some("normal block's child blocks was retrieved from block tree"), children.length == 1 && children(0) == nblock2)
+  }
+
+  private def addNewBlocks(blocktree: BlockTree, pblock: BlockBaseV1, n: Int): Array[NormalBlockTest1] = {
+    testInterface.outputMessage("generating normal consecutive blocks...")
+    val nblocks: Array[NormalBlockTest1] = new Array[NormalBlockTest1](n)
+    for (i <- 0 until n) {
+      if (i == 0) {
+        nblocks(i) = new NormalBlockTest1(pblock.index.moveForward(i + 1).asInstanceOf[IndexV1], pblock.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
+      }
+      else {
+        nblocks(i) = new NormalBlockTest1(pblock.index.moveForward(i + 1).asInstanceOf[IndexV1], nblocks(i - 1).id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
+      }
+      testInterface.outputMessage(StandardUtil.normalBlockToString(nblocks(i)))
+    }
+    testInterface.outputMessage("adding normal blocks to block tree...")
+    for (i <- 0 until n) {
+      blocktree.addBlock(nblocks(i))
+    }
+    nblocks
+  }
+
+  protected def doTestBlockTreeFork(): Unit = {
+    testInterface.outputTitle("block tree fork test", None)
+
+    testInterface.outputMessage("generating genesis block...")
+    val gblock: GenesisBlockTest1 = new GenesisBlockTest1(__.getRandomPrintableString(32))
+    testInterface.outputMessage(StandardUtil.genesisBlockToString(gblock))
+    testInterface.outputMessage("initializing block tree, providing genesis block...")
+    val blocktree: BlockTree = new BlockTree(gblock)
+
+    val paths: Array[Array[NormalBlockTest1]] = new Array[Array[NormalBlockTest1]](10)
+    var maxCumulativeTrustworthiness: BigInteger = BigInteger.ZERO
+    var maxIndex: Int = -1
+    var f: Boolean = true
+    for (i <- 0 until 10) {
+      paths(i) = addNewBlocks(blocktree, gblock, 9)
+      val cumulativeTrustworthiness: BigInteger = paths(i).map((b) => b.trustworthiness.trustworthiness).fold(BigInteger.ZERO)((x, acc) => acc.add(x))
+      if (maxCumulativeTrustworthiness.compareTo(cumulativeTrustworthiness) < 0) {
+        maxCumulativeTrustworthiness = cumulativeTrustworthiness
+        maxIndex = i
+        f = true
+      }
+      else if (maxCumulativeTrustworthiness.compareTo(cumulativeTrustworthiness) == 0) {
+        f = false
+      }
+
+      testInterface.outputMessage("checking cumulative trustworthiness...")
+      testInterface.outputMessage(__.toKeyValueString("cumulative trastworthiness", cumulativeTrustworthiness.toString))
+      testInterface.outputMessage(__.toKeyValueString("max cumulative trastworthiness", maxCumulativeTrustworthiness.toString))
+      testInterface.outputMessage("checking active blocks...")
+      for (j <- 0 until 9) {
+        testInterface.outputMessage(StandardUtil.normalBlockToString(blocktree.getActiveBlock(new IndexV1(j + 1)).get.asInstanceOf[NormalBlockTest1]))
+      }
+
+      if (f) {
+        testInterface.outputItem("6.1", Some("head block"), blocktree.getHeadBlock == paths(maxIndex).last)
+        for (j <- 0 until 9) {
+          testInterface.outputItem("6.2", Some("active block"), blocktree.getActiveBlock(new IndexV1(j + 1)).get == paths(maxIndex)(j))
+        }
+        val n: Int = __.getRandomInt(9) + 1
+        val bs: Traversable[IBlock] = blocktree.getBlockchain(n)
+        for (b <- bs.toArray.zip(paths(maxIndex).reverse)) {
+          testInterface.outputItem("6.3", Some("blockchain"), b._1 == b._2)
+        }
+        val m: Int = __.getRandomInt(9) + 1
+        val bs2: Traversable[IBlock] = blocktree.getBlockchain(new IndexV1(m), m).get
+        for (b <- bs2.toArray.zip(paths(maxIndex).reverse.drop(9 - m))) {
+          testInterface.outputItem("6.4", Some("blockchain"), b._1 == b._2)
+        }
+      }
+    }
+    if (f) {
+      for (i <- 0 until 10) {
+        for (j <- 0 until 9) {
+          if (i == maxIndex) {
+            testInterface.outputItem("6.5", Some("is active"), blocktree.isActive(paths(i)(j)))
+            testInterface.outputItem("6.6", Some("is active"), blocktree.isActive(paths(i)(j).id))
+          }
+          else {
+            testInterface.outputItem("6.5", Some("is active"), !blocktree.isActive(paths(i)(j)))
+            testInterface.outputItem("6.6", Some("is active"), !blocktree.isActive(paths(i)(j).id))
+          }
+        }
+      }
+    }
   }
 }

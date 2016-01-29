@@ -184,21 +184,21 @@ class BlockTree(genesis: IGenesisBlock) extends IBlockChain {
   //有効な先頭ブロックを更新する
   //O(n)程度？
   private def challenge(blockTree: ValueTree[IBlock]): Unit = {
-    val cumulativeTrustworthiness: ITrustworthiness = blockTree.getValue.trustworthiness
-    val activeCumulativeTrustworthiness: ITrustworthiness = activeHead.getValue.trustworthiness
+    var cumulativeTrustworthiness: ITrustworthiness = blockTree.getValue.trustworthiness
+    var activeCumulativeTrustworthiness: ITrustworthiness = activeHead.getValue.trustworthiness
 
     var bt: ITree[IBlock] = blockTree
     var f: Boolean = true
     while (bt.getValue.index.isGreat(activeHead.getValue.index) && f) {
       bt.getParent match {
         case Some(pt) =>
-          cumulativeTrustworthiness.add(pt.getValue.trustworthiness)
+          cumulativeTrustworthiness = cumulativeTrustworthiness.add(pt.getValue.trustworthiness).asInstanceOf[ITrustworthiness]
           bt = pt
         case None => f = false
       }
     }
 
-    if (!f) {
+    if (f) {
       if (bt == activeHead) {
         activeHead = blockTree
       }
@@ -208,38 +208,38 @@ class BlockTree(genesis: IGenesisBlock) extends IBlockChain {
         while (activebt.getValue.index.isGreat(bt.getValue.index) && f2) {
           activebt.getParent match {
             case Some(pt) =>
-              activeCumulativeTrustworthiness.add(pt.getValue.trustworthiness)
+              activeCumulativeTrustworthiness = activeCumulativeTrustworthiness.add(pt.getValue.trustworthiness).asInstanceOf[ITrustworthiness]
               activebt = pt
             case None => f2 = false
           }
         }
 
-        if (!f2) {
+        if (f2) {
           var f3: Boolean = true
           while (bt != activebt && f3) {
             bt.getParent match {
               case Some(pt) =>
-                cumulativeTrustworthiness.add(pt.getValue.trustworthiness)
+                cumulativeTrustworthiness = cumulativeTrustworthiness.add(pt.getValue.trustworthiness).asInstanceOf[ITrustworthiness]
                 bt = pt
               case None => f3 = false
             }
             activebt.getParent match {
               case Some(pt) =>
-                activeCumulativeTrustworthiness.add(pt.getValue.trustworthiness)
+                activeCumulativeTrustworthiness = activeCumulativeTrustworthiness.add(pt.getValue.trustworthiness).asInstanceOf[ITrustworthiness]
                 activebt = pt
               case None => f3 = false
             }
           }
 
-          if (!f3) {
+          if (f3) {
             if (cumulativeTrustworthiness.isGreat(activeCumulativeTrustworthiness)) {
               activeHead = blockTree
             }
-            else if (cumulativeTrustworthiness.isSame(activeCumulativeTrustworthiness)) {
-              if (__.getRandomBoolean) {
-                activeHead = blockTree
-              }
-            }
+//            else if (cumulativeTrustworthiness.isSame(activeCumulativeTrustworthiness)) {
+//              if (__.getRandomBoolean) {
+//                activeHead = blockTree
+//              }
+//            }
           }
         }
       }
@@ -408,10 +408,12 @@ class BlockTree(genesis: IGenesisBlock) extends IBlockChain {
 object StandardUtil {
   def idToString(id: IdV1): String = __.toKeyValueString("id", __.toHexString(id.id))
   def indexToString(index: IndexV1): String = __.toKeyValueString("index", index.index.toString)
+  def trustworthinessToString(trustworthiness: TrustworthinessV1): String = __.toKeyValueString("trustworthiness", trustworthiness.trustworthiness.toString)
   def genesisBlockToString(gblock: GenesisBlockTest1): String = {
     __.toMultilineString(Array(
       indexToString(gblock.index),
       idToString(gblock.id),
+      trustworthinessToString(gblock.trustworthiness),
       __.toKeyValueString("seed", gblock.seed)
     ))
   }
@@ -419,6 +421,7 @@ object StandardUtil {
     __.toMultilineString(Array(
       indexToString(nblock.index),
       idToString(nblock.id),
+      trustworthinessToString(nblock.trustworthiness),
       __.toKeyValueString("parent id", nblock.parentId.map((t) => __.toHexString(t.id)).getOrElse(__.nullString)),
       __.toKeyValueString("data", __.toHexString(nblock.data))
     ))
@@ -428,6 +431,7 @@ object StandardUtil {
     __.toMultilineStringHTML(Array(
       indexToString(gblock.index),
       idToString(gblock.id),
+      trustworthinessToString(gblock.trustworthiness),
       __.toKeyValueString("seed", gblock.seed)
     ))
   }
@@ -435,6 +439,7 @@ object StandardUtil {
     __.toMultilineStringHTML(Array(
       indexToString(nblock.index),
       idToString(nblock.id),
+      trustworthinessToString(nblock.trustworthiness),
       __.toKeyValueString("parent id", nblock.parentId.map((t) => __.toHexString(t.id)).getOrElse(__.nullString)),
       __.toKeyValueString("data", __.toHexString(nblock.data))
     ))
