@@ -67,35 +67,36 @@ trait ITree[T] {
     outQueue
   }
 
-  //    //子孫を列挙する
-  //    //値と派生値から成る組の木を作成する関数を受け取る
-  //    def descendantTrees[S](base: T => ITree[(T, S)], rec: (T, ITree[(T, S)]) => ITree[(T, S)]): Traversable[ITree[(T, S)]] = {
-  //      //全ての子を一時的に格納する
-  //      //複数の子を一度に処理することはできないため、子は1つずつ処理しなければならない
-  //      val inStack = new mutable.Stack[ITree[T]]()
-  //      val inStackCalc = new mutable.Stack[ITree[(T, S)]]()
-  //      //全ての子を最終的に格納する
-  //      val outQueue = new mutable.Queue[ITree[(T, S)]]()
-  //      //自身を格納する
-  //      inStack.push(this)
-  //      inStackCalc.push(base(this.getValue))
-  //      //子が存在する限り
-  //      while (inStack.nonEmpty) {
-  //        //一時的に格納した子を格納する
-  //        val tree: ITree[T] = inStack.pop()
-  //        val treeCalc: ITree[(T, S)] = inStackCalc.pop()
-  //        //子を格納する
-  //        outQueue.enqueue(treeCalc)
-  //        //子の子を取得する
-  //        for (child <- tree.getChildren) {
-  //          //子の子を格納する
-  //          inStack.push(child)
-  //          inStackCalc.push(rec(child.getValue, treeCalc))
-  //        }
-  //      }
-  //      //全ての子を返す
-  //      outQueue
-  //    }
+  //子孫を列挙する
+  //値から派生値を生成する関数を受け取る（base case）
+  //値と親の派生値から派生値を生成する関数を受け取る（induction step）
+  def descendantDeriveTrees[S](base: T => S, rec: (S, T) => S): Traversable[(ITree[T], S)] = {
+    //全ての子を一時的に格納する
+    //複数の子を一度に処理することはできないため、子は1つずつ処理しなければならない
+    val inStack = new mutable.Stack[ITree[T]]()
+    val inStackCalc = new mutable.Stack[S]()
+    //全ての子を最終的に格納する
+    val outQueue = new mutable.Queue[(ITree[T], S)]()
+    //自身を格納する
+    inStack.push(this)
+    inStackCalc.push(base(this.getValue))
+    //子が存在する限り
+    while (inStack.nonEmpty) {
+      //一時的に格納した子を格納する
+      val tree: ITree[T] = inStack.pop()
+      val treeCalc: S = inStackCalc.pop()
+      //子を格納する
+      outQueue.enqueue((tree, treeCalc))
+      //子の子を取得する
+      for (child <- tree.getChildren) {
+        //子の子を格納する
+        inStack.push(child)
+        inStackCalc.push(rec(treeCalc, child.getValue))
+      }
+    }
+    //全ての子を返す
+    outQueue
+  }
 
   //グラフの名称
   lazy val graphName: String = "tree"

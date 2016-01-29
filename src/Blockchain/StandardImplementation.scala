@@ -246,6 +246,58 @@ class BlockTree(genesis: IGenesisBlock) extends IBlockChain {
     }
   }
 
+  //ブロックを削除する
+  //O(n)
+  def deleteBlock(id: IId): Either[Unit, String] = {
+    if (id == null) {
+      Right("the id is null")
+    }
+    else {
+      blockTree.descendantTrees().find((t) => t.getValue.id == id) match {
+        case Some(bt) =>
+          if (bt.getChildren.toArray.length == 0) {
+            bt.getParent match {
+              case Some(pt) =>
+                pt.removeChild(bt)
+                if (bt == activeHead) {
+                  dechallenge()
+                }
+                Left()
+              case None => Right("the block's parent block does not exist (the genesis block can not be deleted)")
+            }
+          }
+          else {
+            Right("the block has child block")
+          }
+        case None => Right("the block does not exist")
+      }
+    }
+  }
+
+  //有効な先頭ブロックを更新する
+  //O(n)
+  private def dechallenge(): Unit = {
+    var head: ValueTree[IBlock] = blockTree
+    var maxCumulativeTrustworthiness: ITrustworthiness = blockTree.getValue.trustworthiness
+    for ((bt, d) <- blockTree.descendantDeriveTrees[ITrustworthiness]((b) => b.trustworthiness, (pd, b) => pd.add(b.trustworthiness).asInstanceOf[ITrustworthiness])) {
+      if (d.isGreat(maxCumulativeTrustworthiness)) {
+        head = bt.asInstanceOf[ValueTree[IBlock]]
+        maxCumulativeTrustworthiness = d
+      }
+    }
+    activeHead = head
+  }
+
+    //ブロックを削除する
+  def deleteBlock(block: IBlock): Either[Unit, String] = {
+    if (block == null) {
+      Right("the block is null")
+    }
+    else {
+      deleteBlock(block.id)
+    }
+  }
+
   //ブロックを取得する
   //O(n)
   def getBlock(id: IId): Option[IBlock] = {

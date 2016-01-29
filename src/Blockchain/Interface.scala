@@ -34,8 +34,8 @@ trait IBlockChain {
   //ブロックを追加する
   def addBlock(block: IBlock): Either[Unit, String]
   //ブロックを削除する
-  //def deleteBlock(id: IId): Either[Unit, String]
-  //def deleteBlock(block: IBlock): Either[Unit, String]
+  def deleteBlock(id: IId): Either[Unit, String]
+  def deleteBlock(block: IBlock): Either[Unit, String]
   //ブロックを取得する
   def getBlock(id: IId): Option[IBlock]
   //親ブロックを取得する
