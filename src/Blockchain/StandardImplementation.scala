@@ -235,11 +235,11 @@ class BlockTree(genesis: IGenesisBlock) extends IBlockChain {
             if (cumulativeTrustworthiness.isGreat(activeCumulativeTrustworthiness)) {
               activeHead = blockTree
             }
-//            else if (cumulativeTrustworthiness.isSame(activeCumulativeTrustworthiness)) {
-//              if (__.getRandomBoolean) {
-//                activeHead = blockTree
-//              }
-//            }
+            else if (cumulativeTrustworthiness.isSame(activeCumulativeTrustworthiness)) {
+              if (__.getRandomBoolean) {
+                activeHead = blockTree
+              }
+            }
           }
         }
       }
