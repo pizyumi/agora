@@ -12,6 +12,7 @@ class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent 
   protected lazy val testGenesisBlock: String = "test genesis block"
   protected lazy val testNormalBlock: String = "test normal block"
   protected lazy val testBlockTreeFork: String = "test block tree fork"
+  protected lazy val testBlockTreeDelete: String = "test block tree delete"
   protected lazy val testBlockTree: String = "test block tree"
 
   def getCommands: Traversable[Command] = {
@@ -21,6 +22,7 @@ class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent 
       new Command(testGenesisBlock, (args) => doTestGenesisBlock()),
       new Command(testNormalBlock, (args) => doTestNormalBlock()),
       new Command(testBlockTreeFork, (args) => doTestBlockTreeFork()),
+      new Command(testBlockTreeDelete, (args) => doTestBlockTreeDelete()),
       new Command(testBlockTree, (args) => doTestBlockTree())
     )
   }
@@ -238,5 +240,60 @@ class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent 
         }
       }
     }
+  }
+
+  protected def doTestBlockTreeDelete(): Unit = {
+    testInterface.outputTitle("block tree delete test", None)
+
+    testInterface.outputMessage("generating genesis block...")
+    val gblock: GenesisBlockTest1 = new GenesisBlockTest1(__.getRandomPrintableString(32))
+    testInterface.outputMessage(StandardUtil.genesisBlockToString(gblock))
+    testInterface.outputMessage("initializing block tree, providing genesis block...")
+    val blocktree: BlockTree = new BlockTree(gblock)
+
+    val paths: Array[Array[NormalBlockTest1]] = new Array[Array[NormalBlockTest1]](10)
+    val heads: Array[Int] = new Array[Int](10)
+    val cumulativeTrustworthinesses: Array[BigInteger] = new Array[BigInteger](10)
+    for (i <- 0 until 10) {
+      paths(i) = addNewBlocks(blocktree, gblock, 9)
+      heads(i) = 8
+      cumulativeTrustworthinesses(i) = paths(i).map((b) => b.trustworthiness.trustworthiness).fold(BigInteger.ZERO)((x, acc) => acc.add(x))
+    }
+
+    var remaining: Int = 10 * 9
+    while (remaining > 0) {
+      val i: Int = __.getRandomInt(10)
+      if (heads(i) >= 0) {
+        remaining = remaining - 1
+        val delblock: NormalBlockTest1 = paths(i)(heads(i))
+        testInterface.outputItem("7.1", Some("block exists before deletion"), blocktree.isContain(delblock))
+        blocktree.deleteBlock(delblock)
+        testInterface.outputItem("7.2", Some("block does not exist after deletion"), !blocktree.isContain(delblock))
+        cumulativeTrustworthinesses(i) = cumulativeTrustworthinesses(i).subtract(delblock.trustworthiness.trustworthiness)
+        heads(i) = heads(i) - 1
+        var active: Int = 0
+        var max: BigInteger = cumulativeTrustworthinesses(0)
+        var f: Boolean = false
+        for (m <- 1 until 10) {
+          if (max.compareTo(cumulativeTrustworthinesses(m)) < 0) {
+            active = m
+            max = cumulativeTrustworthinesses(m)
+            f = false
+          }
+          else if (max.compareTo(cumulativeTrustworthinesses(m)) == 0) {
+            f = true
+          }
+        }
+        if (!f) {
+          if (heads(active) != -1) {
+            testInterface.outputItem("7.3", Some("blockchain head after deletion"), blocktree.getHeadBlock == paths(active)(heads(active)))
+          }
+          else {
+            testInterface.outputItem("7.3", Some("blockchain head after deletion"), blocktree.getHeadBlock == gblock)
+          }
+        }
+      }
+    }
+    testInterface.outputItem("7.4", Some("blockchain head after all normal block deletion"), blocktree.getHeadBlock == gblock)
   }
 }

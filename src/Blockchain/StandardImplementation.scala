@@ -100,6 +100,8 @@ class TrustworthinessV1(trustworthinessIn: BigInteger) extends ITrustworthiness 
 
 //ブロックの標準実装
 trait BlockBaseV1 extends IBlock {
+  val trustworthiness: TrustworthinessV1
+
   lazy val id: IdV1 = new IdV1(toIdSha256)
 
   protected def toIdBytesIngredient: Array[Array[Byte]] = Array(index.toBytes, parentId.map((v) => v.toBytes).getOrElse(Array.emptyByteArray))
@@ -280,7 +282,7 @@ class BlockTree(genesis: IGenesisBlock) extends IBlockChain {
     var head: ValueTree[IBlock] = blockTree
     var maxCumulativeTrustworthiness: ITrustworthiness = blockTree.getValue.trustworthiness
     for ((bt, d) <- blockTree.descendantDeriveTrees[ITrustworthiness]((b) => b.trustworthiness, (pd, b) => pd.add(b.trustworthiness).asInstanceOf[ITrustworthiness])) {
-      if (d.isGreat(maxCumulativeTrustworthiness)) {
+      if (bt.getChildren.isEmpty && d.isGreat(maxCumulativeTrustworthiness)) {
         head = bt.asInstanceOf[ValueTree[IBlock]]
         maxCumulativeTrustworthiness = d
       }
