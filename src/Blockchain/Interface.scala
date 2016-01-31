@@ -59,5 +59,5 @@ trait IBlockChain {
   def isActive(id: IId): Boolean
 
   //DOT形式のグラフを作成する
-  def toDotGraph: String = throw new UnsupportedOperationException()
+  def toDotGraph(valueToString: IBlock => String): String = throw new UnsupportedOperationException()
 }

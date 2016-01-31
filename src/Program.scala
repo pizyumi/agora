@@ -1,7 +1,7 @@
 import java.nio.file.Files
 import java.nio.file.Path
 
-import skinny.micro.WebApp
+import skinny.micro.{WebServer, WebApp}
 
 object Program {
   import Common._
@@ -29,7 +29,7 @@ object Program {
       Files.createDirectory(reportFolderPath)
     }
 
-    //WebServer.mount(new BlockchainApp(dotExeFile, graphvizFolder)).port(webServerPort).start()
+    WebServer.mount(new BlockchainApp(dotExeFile, graphvizFolder)).port(webServerPort).start()
 
     val cli: Common.CLI = new Common.CLI()
     cli.register(new Blockchain.CLI(StandardCLIFactory, new BusinessLogic(StandardBusinessLogicFactory)))

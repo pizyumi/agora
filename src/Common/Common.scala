@@ -31,6 +31,8 @@ object __ {
   lazy val mimetypeHTML: String = "text/html"
   lazy val mimetypeSVG: String = "image/svg+xml"
 
+  lazy val colorRed: String = "red"
+
   def getBytes(in: Int): Array[Byte] = {
     val buf: ByteBuffer = ByteBuffer.allocate(4)
     buf.putInt(in)
@@ -147,5 +149,30 @@ object __ {
     val length: Int = Math.min(biBytes.length, numBytes)
     System.arraycopy(biBytes, start, bytes, numBytes - length, length)
     bytes
+  }
+
+  def parseInts(str: String, n: Int): Option[Array[Int]] = {
+    val args: Array[String] = str.split(' ')
+    if (args.length < n) {
+      None
+    }
+    else {
+      val ints: Array[Int] = new Array[Int](n)
+      var i: Int = 0
+      var flag: Boolean = true
+      while (flag && i < n) {
+        __.tryToInt(args(i)) match {
+          case Some(int) => ints(i) = int
+          case None => flag = false
+        }
+        i += 1
+      }
+      if (flag) {
+        Some(ints)
+      }
+      else {
+        None
+      }
+    }
   }
 }

@@ -100,6 +100,7 @@ class TrustworthinessV1(trustworthinessIn: BigInteger) extends ITrustworthiness 
 
 //ブロックの標準実装
 trait BlockBaseV1 extends IBlock {
+  val index: IndexV1
   val trustworthiness: TrustworthinessV1
 
   lazy val id: IdV1 = new IdV1(toIdSha256)
@@ -455,8 +456,10 @@ class BlockTree(genesis: IGenesisBlock) extends IBlockChain {
     }
   }
 
+  lazy val nodeSettings: String = Graphviz.createSettings(Array(Graphviz.createSetting(Graphviz.keywordColor, __.colorRed)))
+
   //DOT形式のグラフを作成する
-  override def toDotGraph: String = blockTree.toDotGraph((b) => __.toHexString(b.id.toBytes.slice(0, 8)))
+  override def toDotGraph(valueToString: IBlock => String): String = blockTree.toDotGraph(valueToString, (b) => if (isActive(b)) nodeSettings else __.emptyString, (p, b) => __.emptyString)
 }
 
 object StandardUtil {

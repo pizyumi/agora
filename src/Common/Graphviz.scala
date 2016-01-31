@@ -11,6 +11,8 @@ object Graphviz {
   lazy val keywordNode = "node "
   lazy val keywordEdge = "edge "
 
+  lazy val keywordColor = "color"
+
   def createDigraph(name: String, content: String): String = keywordDigraph + name + " {" + __.newlineString + content + __.newlineString + "}"
   def createGraphSettings(settings: String): String = keywordGraph + "[" + __.newlineString + settings + __.newlineString + "];"
   def createNodeSettings(settings: String): String = keywordNode + "[" + __.newlineString + settings + __.newlineString + "];"

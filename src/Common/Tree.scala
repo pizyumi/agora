@@ -101,15 +101,6 @@ trait ITree[T] {
   //グラフの名称
   lazy val graphName: String = "tree"
 
-  //    //DOT形式のグラフを作成する
-  //    //値を文字列に変換する関数を受け取る
-  //    def toDotGraph(valueToString: T => String): String = toDotGraphIn(descendantTrees(), valueToString)
-  //
-  //    //DOT形式のグラフを作成する
-  //    //値と派生値から成る組の木を作成する関数を受け取る
-  //    //値を文字列に変換する関数を受け取る
-  //    def toDotGraph[S](base: T => ITree[(T, S)], rec: (T, ITree[(T, S)]) => ITree[(T, S)], valueToString: ((T, S)) => String): String = toDotGraphIn[(T, S)](descendantTrees(base, rec), valueToString)
-
   //DOT形式のグラフを作成する
   //値を文字列に変換する関数を受け取る
   def toDotGraph(valueToString: T => String): String = toDotGraph(valueToString, (_) => __.emptyString, (_, _) => __.emptyString)

@@ -35,6 +35,36 @@ object HTMLCLIFactory extends ICLIFactory {
   def toStringNormalBlock(nblock: NormalBlockTest1): String = StandardUtil.normalBlockToHTML(nblock)
 }
 
+trait IPerformanceBusinessLogic {
+  def doCheckBlockchainPerformance(n: Int, nBlock: Int): Either[Long, String]
+}
+
+class PerformanceBusinessLogic(factory: IBusinessLogicFactory) extends IPerformanceBusinessLogic {
+  def doCheckBlockchainPerformance(n: Int, nBlock: Int): Either[Long, String] = {
+    val blocks: ListBuffer[IBlock] = ListBuffer()
+    val gblock: GenesisBlockTest1 = factory.createGenesisBlock(__.getRandomPrintableString(32))
+    val blockchain: IBlockChain = factory.createBlockchain(gblock)
+    var head: BlockBaseV1 = gblock
+    blocks += gblock
+    for (i <- 0 until nBlock) {
+      val nblock: NormalBlockTest1 = factory.createNormalBlock(new IndexV1(head.index.index + 1), head.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
+      blockchain.addBlock(nblock)
+      head = nblock
+      blocks += nblock
+    }
+    val ids: Array[IId] = new Array[IId](n)
+    for (i <- 0 until n) {
+      ids(i) = blocks(__.getRandomInt(blocks.length)).id
+    }
+    val t1: Long = System.currentTimeMillis()
+    for (i <- 0 until n) {
+      blockchain.getBlock(ids(i))
+    }
+    val t2: Long = System.currentTimeMillis()
+    Left(t2 - t1)
+  }
+}
+
 trait IBusinessLogic {
   def doNewBlockchain(seed: String): Either[GenesisBlockTest1, String]
   def doAddBlock(index: Int, sequence: Int): Either[NormalBlockTest1, String]
@@ -57,7 +87,7 @@ class BusinessLogic(factory: IBusinessLogicFactory) extends IBusinessLogic {
     parent match {
       case Some(p) =>
         val cIndex: Int = index + 1
-        val nblock: NormalBlockTest1 = factory.createNormalBlock(new IndexV1(cIndex), p.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt)), __.getRandomBytes(32).toArray)
+        val nblock: NormalBlockTest1 = factory.createNormalBlock(new IndexV1(cIndex), p.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
         bc.addBlock(nblock)
         __.getFromListBuffer(blocksMap, cIndex) match {
           case Some(cblocks) => cblocks += nblock
@@ -123,9 +153,9 @@ class BusinessLogic(factory: IBusinessLogicFactory) extends IBusinessLogic {
     }
   }
 
-  def toDotGraph: Either[String, String] = {
+  def toDotGraph(valueToString: BlockBaseV1 => String): Either[String, String] = {
     blockchain match {
-      case Some(bc) => Left(bc.toDotGraph)
+      case Some(bc) => Left(bc.toDotGraph((b) =>  valueToString(b.asInstanceOf[BlockBaseV1])))
       case None => Right("the blockchain does't exist")
     }
   }
@@ -134,6 +164,7 @@ class BusinessLogic(factory: IBusinessLogicFactory) extends IBusinessLogic {
 class CLI(factory: ICLIFactory, logic: IBusinessLogic) extends ICLIComponent {
   lazy val newBlockchain: String = "new blockchain"
   lazy val addBlock: String = "add block"
+  lazy val checkBlockchainPerformance: String = "check blockchain performance"
 
   def getCommands: Traversable[Command] = {
     Array(
@@ -235,51 +266,14 @@ class TextInterface(factory: ICLIFactory, logic: IBusinessLogic) {
     }
   }
 
-  private def parseBlockIndicator(str: String): Option[(Int, Int)] = {
-    parseInts(str, 2).map((elem) => (elem(0), elem(1)))
-
-    //      val args: Array[String] = str.split(' ')
-    //      if (args.length < 2) {
-    //        None
-    //      }
-    //      else {
-    //        val index: Option[Int] = __.tryToInt(args(0))
-    //        val sequence: Option[Int] = __.tryToInt(args(1))
-    //        index.flatMap((i) => sequence.map((s) => (i, s)))
-    //      }
-  }
+  private def parseBlockIndicator(str: String): Option[(Int, Int)] = __.parseInts(str, 2).map((elem) => (elem(0), elem(1)))
 
   private def parseN(str: String): Option[Int] = {
     if (str.isEmpty) {
       Some(1)
     }
     else {
-      parseInts(str, 1).map((elem) => elem(0))
-    }
-  }
-
-  private def parseInts(str: String, n: Int): Option[Array[Int]] = {
-    val args: Array[String] = str.split(' ')
-    if (args.length < n) {
-      None
-    }
-    else {
-      val ints: Array[Int] = new Array[Int](n)
-      var i: Int = 0
-      var flag: Boolean = true
-      while (flag && i < n) {
-        __.tryToInt(args(i)) match {
-          case Some(int) => ints(i) = int
-          case None => flag = false
-        }
-        i += 1
-      }
-      if (flag) {
-        Some(ints)
-      }
-      else {
-        None
-      }
+      __.parseInts(str, 1).map((elem) => elem(0))
     }
   }
 }
@@ -304,7 +298,7 @@ class WebCLI(dotExeFile: String, workFolder: String) {
   lazy val graphTmpFile: String = "graph"
 
   def blockchainGraphGet(): Option[String] = {
-    val dotGraph: Either[String, String] = businessLogic.toDotGraph
+    val dotGraph: Either[String, String] = businessLogic.toDotGraph(toStringBlock)
     dotGraph match {
       case Left(graph) =>
         val time: Long = System.currentTimeMillis() + 5000
@@ -321,6 +315,13 @@ class WebCLI(dotExeFile: String, workFolder: String) {
         Some(__.readFile(outPath))
       case Right(_) => None
     }
+  }
+
+  private def toStringBlock(gblock: BlockBaseV1): String = {
+    __.toMultilineString(Array(
+      __.toHexString(gblock.id.toBytes.slice(0, 8)),
+      __.toKeyValueString("trustworthiness", gblock.trustworthiness.trustworthiness.toString)
+    ))
   }
 
   private def createblockchainHTML(): String = {
