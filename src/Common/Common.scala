@@ -31,6 +31,8 @@ object __ {
   lazy val mimetypeHTML: String = "text/html"
   lazy val mimetypeSVG: String = "image/svg+xml"
 
+  lazy val millisecond: String = "ms"
+
   lazy val colorRed: String = "red"
 
   def getBytes(in: Int): Array[Byte] = {

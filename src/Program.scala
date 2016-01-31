@@ -29,7 +29,7 @@ object Program {
       Files.createDirectory(reportFolderPath)
     }
 
-    WebServer.mount(new BlockchainApp(dotExeFile, graphvizFolder)).port(webServerPort).start()
+    //WebServer.mount(new BlockchainApp(dotExeFile, graphvizFolder)).port(webServerPort).start()
 
     val perfLogicsMap: Map[String, IPerformanceBusinessLogic] = Map(
       "blocktree" -> new PerformanceBusinessLogic(StandardBusinessLogicFactory)

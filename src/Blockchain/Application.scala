@@ -177,6 +177,52 @@ class CLIBase() {
       __.parseInts(str, 1).map((elem) => elem(0))
     }
   }
+
+  lazy val defaultNumOfAddition: Int = 10
+  lazy val defaultNumOfBlocks: Int = 10
+
+  protected def parsePerfParam(str: String, plogicsName: Array[String]): Either[(String, Int, Int), String] = {
+    if (plogicsName.length == 0) {
+      Right("the type of the blockchain does not exist")
+    }
+    else {
+      val args: Array[String] = str.split(' ')
+      if (args.length == 0) {
+        Left(plogicsName(0), defaultNumOfAddition, defaultNumOfBlocks)
+      }
+      else {
+        if (!plogicsName.contains(args(0))) {
+          Right("the type of the blockchain does not mutch")
+        }
+        else {
+          if (args.length == 1) {
+            Left(args(0), defaultNumOfAddition, defaultNumOfBlocks)
+          }
+          else {
+            __.tryToInt(args(1)) match {
+              case Some(n) if n > 0 =>
+                if (args.length == 2) {
+                  Left(args(0), n, defaultNumOfBlocks)
+                }
+                else {
+                  __.tryToInt(args(2)) match {
+                    case Some(nBlock) if nBlock > 0 =>
+                      if (args.length == 3) {
+                        Left(args(0), n, nBlock)
+                      }
+                      else {
+                        Right("the number of arguments must be three")
+                      }
+                    case None => Right("the number of blocks must be positive integer")
+                  }
+                }
+              case None => Right("the number of addition must be positive integer")
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 class CLI(factory: ICLIFactory, logic: IBusinessLogic, plogics: Map[String, IPerformanceBusinessLogic]) extends CLIBase() with ICLIComponent {
@@ -184,7 +230,8 @@ class CLI(factory: ICLIFactory, logic: IBusinessLogic, plogics: Map[String, IPer
     Array(
       new Command(newBlockchain, executeNewBlockchain),
       new Command(addBlockRandom, executeAddBlockRandom),
-      new Command(addBlock, executeAddBlock)
+      new Command(addBlock, executeAddBlock),
+      new Command(checkBlockchainPerformance, executeCheckBlockchainPerformance)
     )
   }
 
@@ -228,6 +275,23 @@ class CLI(factory: ICLIFactory, logic: IBusinessLogic, plogics: Map[String, IPer
           case Right(message) => println(__.toErrorMessage(message))
         }
       case None =>
+    }
+  }
+
+  private def executeCheckBlockchainPerformance(args: String): Unit = {
+    val plogicsKey: Array[String] = plogics.keys.toArray
+    var params: Either[(String, Int, Int), String] = parsePerfParam(args, plogicsKey)
+    while (params.isRight) {
+      println(params.right)
+      params = parsePerfParam(scala.io.StdIn.readLine("enter the index and sequence of the parent block in the blockchain: "), plogicsKey)
+    }
+    params match {
+      case Left(p) =>
+        plogics(p._1).doCheckBlockchainPerformance(p._2, p._3) match {
+          case Left(msecond) => println(msecond.toString + __.millisecond)
+          case Right(message) => println(__.toErrorMessage(message))
+        }
+      case Right(_) =>
     }
   }
 }
