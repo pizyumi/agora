@@ -161,14 +161,29 @@ class BusinessLogic(factory: IBusinessLogicFactory) extends IBusinessLogic {
   }
 }
 
-class CLI(factory: ICLIFactory, logic: IBusinessLogic) extends ICLIComponent {
+class CLIBase() {
   lazy val newBlockchain: String = "new blockchain"
+  lazy val addBlockRandom: String = "add block random"
   lazy val addBlock: String = "add block"
   lazy val checkBlockchainPerformance: String = "check blockchain performance"
 
+  protected def parseBlockIndicator(str: String): Option[(Int, Int)] = __.parseInts(str, 2).map((elem) => (elem(0), elem(1)))
+
+  protected def parseN(str: String): Option[Int] = {
+    if (str.isEmpty) {
+      Some(1)
+    }
+    else {
+      __.parseInts(str, 1).map((elem) => elem(0))
+    }
+  }
+}
+
+class CLI(factory: ICLIFactory, logic: IBusinessLogic, plogics: Map[String, IPerformanceBusinessLogic]) extends CLIBase() with ICLIComponent {
   def getCommands: Traversable[Command] = {
     Array(
       new Command(newBlockchain, executeNewBlockchain),
+      new Command(addBlockRandom, executeAddBlockRandom),
       new Command(addBlock, executeAddBlock)
     )
   }
@@ -178,10 +193,24 @@ class CLI(factory: ICLIFactory, logic: IBusinessLogic) extends ICLIComponent {
     while (seed.isEmpty) {
       seed = scala.io.StdIn.readLine("enter a seed of genesis block to be generated: ")
     }
-    val gblock: Either[GenesisBlockTest1, String] = logic.doNewBlockchain(seed)
-    gblock match {
+    logic.doNewBlockchain(seed) match {
       case Left(gb) => println(factory.toStringGenesisBlock(gb))
       case Right(message) => println(__.toErrorMessage(message))
+    }
+  }
+
+  private def executeAddBlockRandom(args: String): Unit = {
+    var num: Option[Int] = parseN(args)
+    while (num.isEmpty) {
+      num = parseN(scala.io.StdIn.readLine("enter the num of the blocks to be added: "))
+    }
+    num match {
+      case Some(n) =>
+        logic.doAddBlocksRandom(n) match {
+          case Left(nblocks) => println(__.toMultilineString(nblocks.map((nb) => factory.toStringNormalBlock(nb))))
+          case Right(message) => println(__.toErrorMessage(message))
+        }
+      case None =>
     }
   }
 
@@ -194,86 +223,65 @@ class CLI(factory: ICLIFactory, logic: IBusinessLogic) extends ICLIComponent {
       case Some(bi) =>
         val index: Int = bi._1
         val sequence: Int = bi._2
-
-        val nblock: Either[NormalBlockTest1, String] = logic.doAddBlock(index, sequence)
-        nblock match {
+        logic.doAddBlock(index, sequence) match {
           case Left(nb) => println(factory.toStringNormalBlock(nb))
           case Right(message) => println(__.toErrorMessage(message))
         }
       case None =>
     }
   }
-
-  private def parseBlockIndicator(str: String): Option[(Int, Int)] = {
-    val args: Array[String] = str.split(' ')
-    if (args.length < 2) {
-      None
-    }
-    else {
-      val index: Option[Int] = __.tryToInt(args(0))
-      val sequence: Option[Int] = __.tryToInt(args(1))
-      index.flatMap((i) => sequence.map((s) => (i, s)))
-    }
-  }
 }
 
-class TextInterface(factory: ICLIFactory, logic: IBusinessLogic) {
-  lazy val newBlockchain: String = "new blockchain"
-  lazy val addBlock: String = "add block"
-  lazy val addBlockRandom: String = "add block random"
-
+class TextInterface(factory: ICLIFactory, logic: IBusinessLogic) extends CLIBase() {
   def executeCommand(command: String): String = {
     if (command.startsWith(newBlockchain)) {
-      val seed: String = command.substring(newBlockchain.length).trim
-      if (seed.isEmpty) {
-        __.toErrorMessageHTML("invalid argument")
-      }
-      else {
-        val gblock: Either[GenesisBlockTest1, String] = logic.doNewBlockchain(seed)
-        gblock match {
-          case Left(gb) => factory.toStringGenesisBlock(gb)
-          case Right(message) => __.toErrorMessageHTML(message)
-        }
-      }
+      executeNewBlockchain(command.substring(newBlockchain.length).trim)
     }
     else if (command.startsWith(addBlockRandom)) {
-      parseN(command.substring(addBlockRandom.length).trim) match {
-        case Some(n) =>
-          logic.doAddBlocksRandom(n) match {
-            case Left(nblocks) => __.toMultilineString(nblocks.map((nb) => factory.toStringNormalBlock(nb)))
-            case Right(message) => __.toErrorMessageHTML(message)
-          }
-        case None => __.toErrorMessageHTML("invalid argument")
-      }
+      executeAddBlockRandom(command.substring(addBlockRandom.length).trim)
     }
     else if (command.startsWith(addBlock)) {
-      val blockIndicator: Option[(Int, Int)] = parseBlockIndicator(command.substring(addBlock.length).trim)
-      blockIndicator match {
-        case Some(bi) =>
-          val index: Int = bi._1
-          val sequence: Int = bi._2
-
-          val nblock: Either[NormalBlockTest1, String] = logic.doAddBlock(index, sequence)
-          nblock match {
-            case Left(nb) => factory.toStringNormalBlock(nb)
-            case Right(message) => __.toErrorMessageHTML(message)
-          }
-        case None => __.toErrorMessageHTML("invalid argument")
-      }
+      executeAddBlock(command.substring(addBlock.length).trim)
     }
     else {
       __.toErrorMessageHTML("invalid command")
     }
   }
 
-  private def parseBlockIndicator(str: String): Option[(Int, Int)] = __.parseInts(str, 2).map((elem) => (elem(0), elem(1)))
-
-  private def parseN(str: String): Option[Int] = {
-    if (str.isEmpty) {
-      Some(1)
+  private def executeNewBlockchain(args: String): String = {
+    val seed: String = args
+    if (seed.isEmpty) {
+      __.toErrorMessageHTML("invalid argument")
     }
     else {
-      __.parseInts(str, 1).map((elem) => elem(0))
+      logic.doNewBlockchain(seed) match {
+        case Left(gb) => factory.toStringGenesisBlock(gb)
+        case Right(message) => __.toErrorMessageHTML(message)
+      }
+    }
+  }
+
+  private def executeAddBlockRandom(args: String): String = {
+    parseN(args) match {
+      case Some(n) =>
+        logic.doAddBlocksRandom(n) match {
+          case Left(nblocks) => __.toMultilineString(nblocks.map((nb) => factory.toStringNormalBlock(nb)))
+          case Right(message) => __.toErrorMessageHTML(message)
+        }
+      case None => __.toErrorMessageHTML("invalid argument")
+    }
+  }
+
+  private def executeAddBlock(args: String): String = {
+    parseBlockIndicator(args) match {
+      case Some(bi) =>
+        val index: Int = bi._1
+        val sequence: Int = bi._2
+        logic.doAddBlock(index, sequence) match {
+          case Left(nb) => factory.toStringNormalBlock(nb)
+          case Right(message) => __.toErrorMessageHTML(message)
+        }
+      case None => __.toErrorMessageHTML("invalid argument")
     }
   }
 }

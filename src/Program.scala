@@ -31,8 +31,12 @@ object Program {
 
     WebServer.mount(new BlockchainApp(dotExeFile, graphvizFolder)).port(webServerPort).start()
 
+    val perfLogicsMap: Map[String, IPerformanceBusinessLogic] = Map(
+      "blocktree" -> new PerformanceBusinessLogic(StandardBusinessLogicFactory)
+    )
+
     val cli: Common.CLI = new Common.CLI()
-    cli.register(new Blockchain.CLI(StandardCLIFactory, new BusinessLogic(StandardBusinessLogicFactory)))
+    cli.register(new Blockchain.CLI(StandardCLIFactory, new BusinessLogic(StandardBusinessLogicFactory), perfLogicsMap))
     cli.register(new Secp256k1TestCLI())
     cli.register(new GraphvizSampleCLI(dotExeFile, graphvizFolder))
     cli.register(new LinkedListTestCLI(reportFolder, dotExeFile))
