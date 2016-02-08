@@ -20,6 +20,12 @@ object StandardBusinessLogicFactory extends IBusinessLogicFactory {
   def createBlockchain(gblock: GenesisBlockTest1) = new BlockTree(gblock)
 }
 
+object StandardBusinessLogicFactoryIndexed extends IBusinessLogicFactory {
+  def createGenesisBlock(seed: String): GenesisBlockTest1 = new GenesisBlockTest1(seed)
+  def createNormalBlock(index: IndexV1, parentId: IdV1, trustworthiness: TrustworthinessV1, data: Array[Byte]): NormalBlockTest1 = new NormalBlockTest1(index, parentId, trustworthiness, data)
+  def createBlockchain(gblock: GenesisBlockTest1) = new IndexedBlockTree(gblock)
+}
+
 trait ICLIFactory {
   def toStringGenesisBlock(gblock: GenesisBlockTest1): String
   def toStringNormalBlock(nblock: NormalBlockTest1): String
