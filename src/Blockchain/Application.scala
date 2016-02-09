@@ -43,6 +43,7 @@ object HTMLCLIFactory extends ICLIFactory {
 
 trait IPerformanceBusinessLogic {
   def doCheckBlockchainPerformance(n: Int, nBlock: Int): Either[Long, String]
+  def doCheckBlockchainPerformanceAdd(n: Int): Either[Long, String]
 }
 
 class PerformanceBusinessLogic(factory: IBusinessLogicFactory) extends IPerformanceBusinessLogic {
@@ -65,6 +66,24 @@ class PerformanceBusinessLogic(factory: IBusinessLogicFactory) extends IPerforma
     val t1: Long = System.currentTimeMillis()
     for (i <- 0 until n) {
       blockchain.getBlock(ids(i))
+    }
+    val t2: Long = System.currentTimeMillis()
+    Left(t2 - t1)
+  }
+
+  def doCheckBlockchainPerformanceAdd(n: Int): Either[Long, String] = {
+    val nblocks: ListBuffer[NormalBlockTest1] = ListBuffer()
+    val gblock: GenesisBlockTest1 = factory.createGenesisBlock(__.getRandomPrintableString(32))
+    var head: BlockBaseV1 = gblock
+    for (i <- 0 until n) {
+      val nblock: NormalBlockTest1 = factory.createNormalBlock(new IndexV1(head.index.index + 1), head.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
+      head = nblock
+      nblocks += nblock
+    }
+    val blockchain: IBlockChain = factory.createBlockchain(gblock)
+    val t1: Long = System.currentTimeMillis()
+    for (nblock <- nblocks) {
+      blockchain.addBlock(nblock)
     }
     val t2: Long = System.currentTimeMillis()
     Left(t2 - t1)
@@ -171,6 +190,7 @@ class CLIBase() {
   lazy val newBlockchain: String = "new blockchain"
   lazy val addBlockRandom: String = "add block random"
   lazy val addBlock: String = "add block"
+  lazy val checkBlockchainPerformanceAdd: String = "check blockchain performance add"
   lazy val checkBlockchainPerformance: String = "check blockchain performance"
 
   protected def parseBlockIndicator(str: String): Option[(Int, Int)] = __.parseInts(str, 2).map((elem) => (elem(0), elem(1)))
@@ -229,6 +249,40 @@ class CLIBase() {
       }
     }
   }
+
+  protected def parsePerfParamAdd(str: String, plogicsName: Array[String]): Either[(String, Int), String] = {
+    if (plogicsName.length == 0) {
+      Right("the type of the blockchain does not exist")
+    }
+    else {
+      val args: Array[String] = str.split(' ')
+      if (args.length == 0) {
+        Left(plogicsName(0), defaultNumOfBlocks)
+      }
+      else {
+        if (!plogicsName.contains(args(0))) {
+          Right("the type of the blockchain does not mutch")
+        }
+        else {
+          if (args.length == 1) {
+            Left(args(0), defaultNumOfBlocks)
+          }
+          else {
+            __.tryToInt(args(1)) match {
+              case Some(n) if n > 0 =>
+                if (args.length == 2) {
+                  Left(args(0), n)
+                }
+                else {
+                  Right("the number of arguments must be two")
+                }
+              case None => Right("the number of blocks must be positive integer")
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 class CLI(factory: ICLIFactory, logic: IBusinessLogic, plogics: Map[String, IPerformanceBusinessLogic]) extends CLIBase() with ICLIComponent {
@@ -237,6 +291,7 @@ class CLI(factory: ICLIFactory, logic: IBusinessLogic, plogics: Map[String, IPer
       new Command(newBlockchain, executeNewBlockchain),
       new Command(addBlockRandom, executeAddBlockRandom),
       new Command(addBlock, executeAddBlock),
+      new Command(checkBlockchainPerformanceAdd, executeCheckBlockchainPerformanceAdd),
       new Command(checkBlockchainPerformance, executeCheckBlockchainPerformance)
     )
   }
@@ -284,16 +339,33 @@ class CLI(factory: ICLIFactory, logic: IBusinessLogic, plogics: Map[String, IPer
     }
   }
 
+  lazy val plogicsKey: Array[String] = plogics.keys.toArray
+
   private def executeCheckBlockchainPerformance(args: String): Unit = {
-    val plogicsKey: Array[String] = plogics.keys.toArray
     var params: Either[(String, Int, Int), String] = parsePerfParam(args, plogicsKey)
     while (params.isRight) {
       println(params.right)
-      params = parsePerfParam(scala.io.StdIn.readLine("enter the index and sequence of the parent block in the blockchain: "), plogicsKey)
+      params = parsePerfParam(scala.io.StdIn.readLine("enter the blockchain type and number of get and number of block: "), plogicsKey)
     }
     params match {
       case Left(p) =>
         plogics(p._1).doCheckBlockchainPerformance(p._2, p._3) match {
+          case Left(msecond) => println(msecond.toString + __.millisecond)
+          case Right(message) => println(__.toErrorMessage(message))
+        }
+      case Right(_) =>
+    }
+  }
+
+  private def executeCheckBlockchainPerformanceAdd(args: String): Unit = {
+    var params: Either[(String, Int), String] = parsePerfParamAdd(args, plogicsKey)
+    while (params.isRight) {
+      println(params.right)
+      params = parsePerfParamAdd(scala.io.StdIn.readLine("enter the blockchain type number of block: "), plogicsKey)
+    }
+    params match {
+      case Left(p) =>
+        plogics(p._1).doCheckBlockchainPerformanceAdd(p._2) match {
           case Left(msecond) => println(msecond.toString + __.millisecond)
           case Right(message) => println(__.toErrorMessage(message))
         }

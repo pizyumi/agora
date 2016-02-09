@@ -29,6 +29,16 @@ trait IGenesisBlock extends IBlock {
   lazy val parentId: Option[IId] = None
 }
 
+//POWに必要な属性を表す
+trait IPOW {
+  //時刻印
+  val timestamp: Long
+  //目標
+  val target: IId
+  //解
+  val nonce: Array[Byte]
+}
+
 //ブロック鎖を表す
 trait IBlockChain {
   //ブロックを追加する
