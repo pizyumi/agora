@@ -26,7 +26,7 @@ trait IBlock extends ICompare {
 //起源ブロックを表す
 trait IGenesisBlock extends IBlock {
   //起源ブロックの親ブロックの識別子は空である
-  lazy val parentId: Option[IId] = None
+  val parentId: Option[IId] = None
 }
 
 //POWに必要な属性を表す

@@ -98,25 +98,38 @@ class TrustworthinessV1(trustworthinessIn: BigInteger) extends ITrustworthiness 
 
 //ブロックの標準実装
 trait BlockBaseV1 extends IBlock {
+  //高さ
   val index: IndexV1
+  //信用度
   val trustworthiness: TrustworthinessV1
 
-  lazy val id: IdV1 = new IdV1(toIdSha256)
+  //識別子はSHA-256
+  //TODO: 他のハッシュ値への対応
+  val id: IdV1 = new IdV1(toIdSha256)
 
+  //識別子を計算する構成要素
   protected def toIdBytesIngredient: Array[Array[Byte]] = Array(index.toBytes, parentId.map((v) => v.toBytes).getOrElse(Array.emptyByteArray))
+  //識別子を計算する素
   private def toIdBytes: Array[Byte] = __.getBytes(toIdBytesIngredient)
+  //識別子を計算する
+  //TODO: 他のハッシュ値への対応
   private def toIdSha256: Array[Byte] = __.getSha256(toIdBytes)
-
+  //ブロックの識別子が同等である場合、ブロックは同一である
   protected override def specIsSame(r: ICompare): Boolean = id.id.sameElements(r.asInstanceOf[BlockBaseV1].id.id)
   //ハッシュコードを返す関数
   protected override def specHashCode: Int = id.hashCode
 }
 
+//POWブロックの標準実装
+trait POWBlockBaseV1 extends BlockBaseV1 {
+  val target: IdV1
+}
+
 class GenesisBlockTest1(seedIn: String) extends BlockBaseV1 with IGenesisBlock {
   val maxSeedLength: Int = 1024
 
-  lazy val index: IndexV1 = new IndexV1(0)
-  lazy val trustworthiness: TrustworthinessV1 = new TrustworthinessV1(BigInteger.ZERO)
+  val index: IndexV1 = new IndexV1(0)
+  val trustworthiness: TrustworthinessV1 = new TrustworthinessV1(BigInteger.ZERO)
 
   val seed: String = {
     if (seedIn.length > maxSeedLength) {
@@ -128,7 +141,7 @@ class GenesisBlockTest1(seedIn: String) extends BlockBaseV1 with IGenesisBlock {
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(seed))
 }
 
-class NormalBlockTest1(indexIn: IndexV1, parentIdIn: IdV1, trustworthinessIn: TrustworthinessV1, dataIn: Array[Byte]) extends BlockBaseV1 {
+class NormalBlockTest1(indexIn: IndexV1, parentIdIn: IdV1, trustworthinessIn: TrustworthinessV1, dataIn: Array[Byte]) extends BlockBaseV1() {
   val maxDataLength: Int = 1024
 
   val index: IndexV1 = indexIn
@@ -143,6 +156,70 @@ class NormalBlockTest1(indexIn: IndexV1, parentIdIn: IdV1, trustworthinessIn: Tr
   }
 
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(data, trustworthiness.trustworthiness.toByteArray)
+}
+
+class BlockchainSettings(seedIn: String, initialTimestampIn: Long, initialTargetIn: IdV1) {
+  val defaultSeed: String = "seed"
+  val defaultInitialTarget: IdV1 = new IdV1(Array(UByte.__(0), UByte.__(127), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255)))
+
+  val seed: String = seedIn
+  val initialTimestamp: Long = initialTimestampIn
+  val initialTarget: IdV1 = initialTargetIn
+}
+
+abstract class GenesisBlockTest2(settings: BlockchainSettings) extends BlockBaseV1 with IGenesisBlock {
+  val maxSeedLength: Int = 1024
+
+  val index: IndexV1 = new IndexV1(0)
+  val trustworthiness: TrustworthinessV1 = new TrustworthinessV1(BigInteger.ZERO)
+
+  val seed: String = {
+    if (settings.seed.length > maxSeedLength) {
+      throw new IllegalArgumentException("seed is too long")
+    }
+    settings.seed
+  }
+
+  protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(seed))
+}
+
+abstract class NormalBlockTest2(indexIn: IndexV1, parentIdIn: IdV1, dataIn: Array[Byte]) extends BlockBaseV1() {
+  val maxDataLength: Int = 1024
+
+  val index: IndexV1 = indexIn
+  val parentId: Option[IdV1] = Some(parentIdIn)
+
+  val data: Array[Byte] = {
+    if (dataIn.length > maxDataLength) {
+      throw new IllegalArgumentException("data is too long")
+    }
+    dataIn
+  }
+
+  protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(data)
+}
+
+class POWGenesisBlockTest2(settings: BlockchainSettings) extends GenesisBlockTest2(settings) with POWBlockBaseV1 {
+  val timestamp: Long = settings.initialTimestamp
+  val target: IdV1 = settings.initialTarget
+  val nonce: Array[Byte] = Array[Byte](0)
+
+  protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(timestamp), target.toBytes)
+}
+
+class POWNormalBlockTest2(indexIn: IndexV1, parentIdIn: IdV1, timestampIn: Long, targetIn: IdV1, nonceIn: Array[Byte], dataIn: Array[Byte]) extends NormalBlockTest2(indexIn, parentIdIn, dataIn) with POWBlockBaseV1 {
+  val trustworthiness: TrustworthinessV1 = toTrustworthiness
+
+  val timestamp: Long = timestampIn
+  val target: IdV1 = targetIn
+  val nonce: Array[Byte] = nonceIn
+
+  //TODO
+  protected def toTrustworthiness: TrustworthinessV1 = {
+    new TrustworthinessV1(BigInteger.ZERO)
+  }
+
+  protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(timestamp), target.toBytes, nonce)
 }
 
 object StandardUtil {
