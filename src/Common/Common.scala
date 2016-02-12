@@ -5,6 +5,7 @@ import java.io.BufferedWriter
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
@@ -125,15 +126,17 @@ object __ {
 
   def getFromListBuffer[T](lb: ListBuffer[T], index: Int): Option[T] = if (lb.isDefinedAt(index)) Some(lb(index)) else None
 
+  lazy val defaultCharset: Charset = Charset.defaultCharset()
+
   def writeFile(path: String, content: String) : Unit = writeFile(fs.getPath(path), content)
   def writeFile(path: Path, content: String) : Unit = {
-    val bw: BufferedWriter = Files.newBufferedWriter(path)
+    val bw: BufferedWriter = Files.newBufferedWriter(path, defaultCharset)
     bw.write(content)
     bw.close()
   }
   def readFile(path: String): String = readFile(fs.getPath(path))
   def readFile(path: Path): String = {
-    val br: BufferedReader = Files.newBufferedReader(path)
+    val br: BufferedReader = Files.newBufferedReader(path, defaultCharset)
     val lines: ListBuffer[String] = ListBuffer()
     var line: String = br.readLine()
     while (line != null) {
