@@ -257,12 +257,25 @@ class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: IndexV1, parent
   protected val hashAlgorithm: String = settings.hashAlgorithm
 
   protected def toTrustworthiness: TrustworthinessV1 = {
-    //val diff1TargetBigint: BigInteger = __.bigIntegerToBytes()
-    throw new Exception()
+    val diff1TargetBigint: BigInteger = __.bytesToPositiveBigInteger(settings.diff1Target.id)
+    val targetBigInt: BigInteger = __.bytesToPositiveBigInteger(target.id)
+    new TrustworthinessV1(diff1TargetBigint.multiply(BigInteger.valueOf(100000000)).divide(targetBigInt))
   }
+
+  protected def isValidId: Boolean = __.bytesToPositiveBigInteger(id.id).compareTo(__.bytesToPositiveBigInteger(target.id)) <= 0
 
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(timestamp), target.toBytes, nonce)
 }
+
+//class POWBlockCreator(settings: BlockchainSettings) {
+//  def createBlock(): IBlock = {
+//    var block: POWNormalBlockTest2 = new POWNormalBlockTest2()
+//    var f: Boolean = true
+//    while (f) {
+//
+//    }
+//  }
+//}
 
 object StandardUtil {
   def idToString(id: IdV1): String = __.toKeyValueString("id", __.toHexString(id.id))
