@@ -205,34 +205,20 @@ class NormalBlockTest1(indexIn: IndexV1, parentIdIn: IdV1, trustworthinessIn: Tr
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(data, trustworthiness.trustworthiness.toByteArray)
 }
 
-abstract class GenesisBlockTest2(settings: BlockchainSettings) extends BlockBaseV1 with IGenesisBlock {
-  val maxSeedLength: Int = 1024
-
+abstract class GenesisBlockTest2(settings: BlockchainSettings) extends BlockBaseV1 with IGenesisBlock with IValidatableItems {
   val index: IndexV1 = new IndexV1(0)
   val trustworthiness: TrustworthinessV1 = new TrustworthinessV1(BigInteger.ZERO)
 
-  val seed: String = {
-    if (settings.seed.length > maxSeedLength) {
-      throw new IllegalArgumentException("seed is too long")
-    }
-    settings.seed
-  }
+  val seed: String = settings.seed
 
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(seed))
 }
 
-abstract class NormalBlockTest2(indexIn: IndexV1, parentIdIn: IdV1, dataIn: Array[Byte]) extends BlockBaseV1() {
-  val maxDataLength: Int = 1024
-
+abstract class NormalBlockTest2(indexIn: IndexV1, parentIdIn: IdV1, dataIn: Array[Byte]) extends BlockBaseV1() with IValidatableItems {
   val index: IndexV1 = indexIn
   val parentId: Option[IdV1] = Some(parentIdIn)
 
-  val data: Array[Byte] = {
-    if (dataIn.length > maxDataLength) {
-      throw new IllegalArgumentException("data is too long")
-    }
-    dataIn
-  }
+  val data: Array[Byte] = dataIn
 
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(data)
 }
@@ -244,10 +230,14 @@ class POWGenesisBlockTest2(settings: BlockchainSettings) extends GenesisBlockTes
 
   protected val hashAlgorithm: String = settings.hashAlgorithm
 
+  protected override def specValidatableItems: Map[String, () => Either[Unit, String]] = Map()
+
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(timestamp), target.toBytes)
 }
 
 class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: IndexV1, parentIdIn: IdV1, timestampIn: Long, targetIn: IdV1, nonceIn: Array[Byte], dataIn: Array[Byte]) extends NormalBlockTest2(indexIn, parentIdIn, dataIn) with POWBlockBaseV1 {
+  lazy val validationNameTarget: String = "target"
+
   val trustworthiness: TrustworthinessV1 = toTrustworthiness
 
   val timestamp: Long = timestampIn
@@ -262,7 +252,18 @@ class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: IndexV1, parent
     new TrustworthinessV1(diff1TargetBigint.multiply(BigInteger.valueOf(100000000)).divide(targetBigInt))
   }
 
-  protected def isValidId: Boolean = __.bytesToPositiveBigInteger(id.id).compareTo(__.bytesToPositiveBigInteger(target.id)) <= 0
+  protected def isValidId: Either[Unit, String] = {
+    if (__.bytesToPositiveBigInteger(id.id).compareTo(__.bytesToPositiveBigInteger(target.id)) <= 0) {
+      Left()
+    }
+    else {
+      Right("id is too large")
+    }
+  }
+
+  protected override def specValidatableItems: Map[String, () => Either[Unit, String]] = Map(
+    validationNameTarget -> (() => isValidId)
+  )
 
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(timestamp), target.toBytes, nonce)
 }

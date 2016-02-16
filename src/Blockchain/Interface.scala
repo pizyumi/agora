@@ -30,7 +30,7 @@ trait IGenesisBlock extends IBlock {
 }
 
 //POWに必要な属性を表す
-trait IPOW {
+trait IPOW extends IValidatableItems {
   //時刻印
   val timestamp: Long
   //目標
