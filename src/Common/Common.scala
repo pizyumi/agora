@@ -147,13 +147,44 @@ object __ {
     lines.mkString(newlineString)
   }
 
-  def bigIntegerToBytes(in: BigInteger, numBytes: Int) = {
+  def bigIntegerToBytes(in: BigInteger, numBytes: Int): Array[Byte] = {
     val bytes: Array[Byte] = new Array[Byte](numBytes)
     val biBytes: Array[Byte] = in.toByteArray
     val start: Int = if (biBytes.length == numBytes + 1) 1 else 0
     val length: Int = Math.min(biBytes.length, numBytes)
     System.arraycopy(biBytes, start, bytes, numBytes - length, length)
     bytes
+  }
+
+  def positiveBigIntegerToBytes(in: BigInteger, numBytes: Int): Array[Byte] = {
+    if (in.compareTo(BigInteger.ZERO) < 0) {
+      throw new Exception("negative value")
+    }
+
+    val bytes: Array[Byte] = new Array[Byte](numBytes)
+    val biBytes: Array[Byte] = in.toByteArray
+    for (i <- bytes.indices) {
+      if (i < biBytes.length) {
+        bytes(bytes.length - i - 1) = biBytes(biBytes.length - i - 1)
+      }
+      else {
+        bytes(bytes.length - i - 1) = UByte.__(0)
+      }
+    }
+    bytes
+  }
+
+  def bytesToPositiveBigInteger(in: Array[Byte]): BigInteger = {
+    val bytes: Array[Byte] = new Array[Byte](in.length + 1)
+    for (i <- bytes.indices) {
+      if (i == 0) {
+        bytes(i) = UByte.__(0)
+      }
+      else {
+        bytes(i) = in(i - 1)
+      }
+    }
+    new BigInteger(bytes)
   }
 
   def parseInts(str: String, n: Int): Option[Array[Int]] = {

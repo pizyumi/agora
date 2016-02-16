@@ -109,6 +109,18 @@ class BlockchainSettings(hashAlgorithmIn: String, seedIn: String, initialTimesta
   val seed: String = seedIn
   val initialTimestamp: Long = initialTimestampIn
   val initialTarget: IdV1 = initialTargetIn
+  val diff1Target: IdV1 = {
+    val array: Array[Byte] = new Array[Byte](hashAlgorithmProperty.lengthByte)
+    for (i <- array.indices) {
+      if (i < 4) {
+        array(i) = UByte.__(0)
+      }
+      else {
+        array(i) = UByte.__(255)
+      }
+    }
+    new IdV1(array)
+  }
 }
 
 class HashAlgorithmProperty(lengthByteIn: Int) {
@@ -245,6 +257,7 @@ class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: IndexV1, parent
   protected val hashAlgorithm: String = settings.hashAlgorithm
 
   protected def toTrustworthiness: TrustworthinessV1 = {
+    //val diff1TargetBigint: BigInteger = __.bigIntegerToBytes()
     throw new Exception()
   }
 
