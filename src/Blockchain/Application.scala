@@ -29,16 +29,34 @@ object StandardBusinessLogicFactoryIndexed extends IBusinessLogicFactory {
 trait ICLIFactory {
   def toStringGenesisBlock(gblock: GenesisBlockTest1): String
   def toStringNormalBlock(nblock: NormalBlockTest1): String
+  def toStringPOWGenesisBlock(gblock: POWGenesisBlockTest2): String
+  def toStringPOWNormalBlock(nblock: POWNormalBlockTest2): String
 }
 
 object StandardCLIFactory extends ICLIFactory {
   def toStringGenesisBlock(gblock: GenesisBlockTest1): String = StandardUtil.genesisBlockToString(gblock)
   def toStringNormalBlock(nblock: NormalBlockTest1): String = StandardUtil.normalBlockToString(nblock)
+  def toStringPOWGenesisBlock(gblock: POWGenesisBlockTest2): String = StandardUtil.powGenesisBlockToString(gblock)
+  def toStringPOWNormalBlock(nblock: POWNormalBlockTest2): String = StandardUtil.powNormalBlockToString(nblock)
 }
 
 object HTMLCLIFactory extends ICLIFactory {
   def toStringGenesisBlock(gblock: GenesisBlockTest1): String = StandardUtil.genesisBlockToHTML(gblock)
   def toStringNormalBlock(nblock: NormalBlockTest1): String = StandardUtil.normalBlockToHTML(nblock)
+  def toStringPOWGenesisBlock(gblock: POWGenesisBlockTest2): String = StandardUtil.powGenesisBlockToHTML(gblock)
+  def toStringPOWNormalBlock(nblock: POWNormalBlockTest2): String = StandardUtil.powNormalBlockToHTML(nblock)
+}
+
+trait ICreateBlockBusinessLogic {
+  def doCreatePOWGenesisBlock(): Either[POWGenesisBlockTest2, String]
+  def doCreatePOWNormalBlock(): Either[POWNormalBlockTest2, String]
+}
+
+class CreateBlockBusinessLogic(settings: BlockchainSettings) extends ICreateBlockBusinessLogic {
+  val powBlockCreator: POWBlockCreator = new POWBlockCreator(settings)
+
+  def doCreatePOWGenesisBlock(): Either[POWGenesisBlockTest2, String] = Left(new POWGenesisBlockTest2(settings))
+  def doCreatePOWNormalBlock(): Either[POWNormalBlockTest2, String] = powBlockCreator.createBlock(new IndexV1(__.getRandomInt(Int.MaxValue)), new IdV1(__.getRandomBytes(settings.hashAlgorithmProperty.lengthByte).toArray), System.currentTimeMillis(), settings.initialTarget, __.getRandomBytes(32).toArray)
 }
 
 trait IPerformanceBusinessLogic {
@@ -190,6 +208,8 @@ class CLIBase() {
   lazy val newBlockchain: String = "new blockchain"
   lazy val addBlockRandom: String = "add block random"
   lazy val addBlock: String = "add block"
+  lazy val createPOWGenesisBlock: String = "create pow genesis block"
+  lazy val createPOWNormalBlock: String = "create pow normal block"
   lazy val checkBlockchainPerformanceAdd: String = "check blockchain performance add"
   lazy val checkBlockchainPerformance: String = "check blockchain performance"
 
@@ -285,12 +305,14 @@ class CLIBase() {
   }
 }
 
-class CLI(factory: ICLIFactory, logic: IBusinessLogic, plogics: Map[String, IPerformanceBusinessLogic]) extends CLIBase() with ICLIComponent {
+class CLI(factory: ICLIFactory, logic: IBusinessLogic, clogic: ICreateBlockBusinessLogic, plogics: Map[String, IPerformanceBusinessLogic]) extends CLIBase() with ICLIComponent {
   def getCommands: Traversable[Command] = {
     Array(
       new Command(newBlockchain, executeNewBlockchain),
       new Command(addBlockRandom, executeAddBlockRandom),
       new Command(addBlock, executeAddBlock),
+      new Command(createPOWGenesisBlock, executeCreatePOWGenesisBlock),
+      new Command(createPOWNormalBlock, executeCreatePOWNormalBlock),
       new Command(checkBlockchainPerformanceAdd, executeCheckBlockchainPerformanceAdd),
       new Command(checkBlockchainPerformance, executeCheckBlockchainPerformance)
     )
@@ -336,6 +358,20 @@ class CLI(factory: ICLIFactory, logic: IBusinessLogic, plogics: Map[String, IPer
           case Right(message) => println(__.toErrorMessage(message))
         }
       case None =>
+    }
+  }
+
+  private def executeCreatePOWGenesisBlock(args: String): Unit = {
+    clogic.doCreatePOWGenesisBlock() match {
+      case Left(gb) => println(factory.toStringPOWGenesisBlock(gb))
+      case Right(message) => println(__.toErrorMessage(message))
+    }
+  }
+
+  private def executeCreatePOWNormalBlock(args: String): Unit = {
+    clogic.doCreatePOWNormalBlock() match {
+      case Left(nb) => println(factory.toStringPOWNormalBlock(nb))
+      case Right(message) => println(__.toErrorMessage(message))
     }
   }
 
