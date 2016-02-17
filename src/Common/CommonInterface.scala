@@ -120,6 +120,8 @@ trait IValidatableItems extends IValidatable {
     }
   }
 
+  def validatableItemsName: Array[String] = specValidatableItems.keys.toArray
+
   def isValidAllItems: Boolean = isValidAllItemsWithMessages.isLeft
   def isValidAllItemsWithMessages: Either[Unit, Array[String]] = {
     val messages: Array[Either[Unit, String]] = specValidatableItems.view.map((item) => {

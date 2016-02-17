@@ -103,7 +103,7 @@ object BlockchainSettings {
   lazy val defaultSeed: String = "seed"
   lazy val defaultInitialTarget: IdV1 = new IdV1(Array(UByte.__(0), UByte.__(127), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255)))
 }
-class BlockchainSettings(hashAlgorithmIn: String, seedIn: String, initialTimestampIn: Long, initialTargetIn: IdV1) {
+class BlockchainSettings(hashAlgorithmIn: String, seedIn: String, initialTimestampIn: Long, initialTargetIn: IdV1, maxLengthNonceIn: Int) {
   val hashAlgorithm: String = hashAlgorithmIn
   val hashAlgorithmProperty: HashAlgorithmProperty = BlockchainSettings.haProperties(hashAlgorithmIn)
   val seed: String = seedIn
@@ -121,6 +121,7 @@ class BlockchainSettings(hashAlgorithmIn: String, seedIn: String, initialTimesta
     }
     new IdV1(array)
   }
+  val maxLengthNonce: Int = maxLengthNonceIn
 }
 
 class HashAlgorithmProperty(lengthByteIn: Int) {
@@ -235,9 +236,11 @@ class POWGenesisBlockTest2(settings: BlockchainSettings) extends GenesisBlockTes
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(timestamp), target.toBytes)
 }
 
-class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: IndexV1, parentIdIn: IdV1, timestampIn: Long, targetIn: IdV1, nonceIn: Array[Byte], dataIn: Array[Byte]) extends NormalBlockTest2(indexIn, parentIdIn, dataIn) with POWBlockBaseV1 {
+object POWNormalBlockTest2 {
   lazy val validationNameTarget: String = "target"
-
+  lazy val validationNameNonce: String = "nonce"
+}
+class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: IndexV1, parentIdIn: IdV1, timestampIn: Long, targetIn: IdV1, nonceIn: Array[Byte], dataIn: Array[Byte]) extends NormalBlockTest2(indexIn, parentIdIn, dataIn) with POWBlockBaseV1 {
   val trustworthiness: TrustworthinessV1 = toTrustworthiness
 
   val timestamp: Long = timestampIn
@@ -261,22 +264,49 @@ class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: IndexV1, parent
     }
   }
 
+  protected def isValidNonce: Either[Unit, String] = {
+    if (nonce.length <= settings.maxLengthNonce) {
+      Left()
+    }
+    else {
+      Right("nonce is too long")
+    }
+  }
+
   protected override def specValidatableItems: Map[String, () => Either[Unit, String]] = Map(
-    validationNameTarget -> (() => isValidId)
+    POWNormalBlockTest2.validationNameTarget -> (() => isValidId),
+    POWNormalBlockTest2.validationNameNonce -> (() => isValidNonce)
   )
 
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(timestamp), target.toBytes, nonce)
 }
 
-//class POWBlockCreator(settings: BlockchainSettings) {
-//  def createBlock(): IBlock = {
-//    var block: POWNormalBlockTest2 = new POWNormalBlockTest2()
-//    var f: Boolean = true
-//    while (f) {
-//
-//    }
-//  }
-//}
+class POWBlockCreator(settings: BlockchainSettings) {
+  def createBlock(index: IndexV1, parentId: IdV1, timestamp: Long, target: IdV1, data: Array[Byte]): Either[IBlock, String] = {
+    var bi: BigInteger = BigInteger.ZERO
+    var nonce: Array[Byte] = bi.toByteArray
+    var block: POWNormalBlockTest2 = new POWNormalBlockTest2(settings, index, parentId, timestamp, target, nonce, data)
+    block.validatableItemsName.view.filter((name) => name != POWNormalBlockTest2.validationNameTarget && name != POWNormalBlockTest2.validationNameNonce).map((name) => block.isValidItemWithMessage(name)).find((r) => r.isRight) match {
+      case Some(either) => Right(either.right.get)
+      case None =>
+        var f: Boolean = true
+        while (f) {
+          if (block.isValidItem(POWNormalBlockTest2.validationNameTarget)) {
+            f = false
+          }
+          else {
+            bi = bi.add(BigInteger.ONE)
+            nonce = bi.toByteArray
+            block = new POWNormalBlockTest2(settings, index, parentId, timestamp, target, nonce, data)
+          }
+        }
+        block.isValidWithMessage match {
+          case Left(_) => Left(block)
+          case Right(msg) => Right(msg)
+        }
+    }
+  }
+}
 
 object StandardUtil {
   def idToString(id: IdV1): String = __.toKeyValueString("id", __.toHexString(id.id))
