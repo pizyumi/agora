@@ -98,12 +98,12 @@ class TrustworthinessV1(trustworthinessIn: BigInteger) extends ITrustworthiness 
 }
 
 object BlockchainSettings {
-  lazy val defaultSettings: BlockchainSettings = new BlockchainSettings(defaultHashALgorithm, defaultSeed, defaultInitialTimestamp, defaultInitialTarget, defaultMaxLengthNonce)
+  lazy val defaultSettings: BlockchainSettings = new BlockchainSettings(defaultHashAlgorithm, defaultSeed, defaultInitialTimestamp, defaultInitialTarget, defaultMaxLengthNonce)
 
   lazy val haSha256: String = "sha256"
   lazy val haProperties: Map[String, HashAlgorithmProperty] = Map(haSha256 -> new HashAlgorithmProperty(32))
 
-  lazy val defaultHashALgorithm: String = haSha256
+  lazy val defaultHashAlgorithm: String = haSha256
   lazy val defaultSeed: String = "seed"
   lazy val defaultInitialTimestamp: Long = 0
   lazy val defaultInitialTarget: IdV1 = new IdV1(Array(UByte.__(0), UByte.__(127), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255)))
@@ -146,7 +146,7 @@ trait BlockBaseV1 extends IBlock {
   //val parentId: Option[IdV1]
 
   //識別子
-  val id: IdV1 = new IdV1(toId)
+  lazy val id: IdV1 = new IdV1(toId)
 
   //ハッシュ関数
   protected val hashAlgorithm: String
@@ -249,7 +249,7 @@ object POWNormalBlockTest2 {
   lazy val validationNameNonce: String = "nonce"
 }
 class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: IndexV1, parentIdIn: IdV1, timestampIn: Long, targetIn: IdV1, nonceIn: Array[Byte], dataIn: Array[Byte]) extends NormalBlockTest2(indexIn, parentIdIn, dataIn) with POWBlockBaseV1 {
-  val trustworthiness: TrustworthinessV1 = toTrustworthiness
+  lazy val trustworthiness: TrustworthinessV1 = toTrustworthiness
 
   val timestamp: Long = timestampIn
   val target: IdV1 = targetIn
