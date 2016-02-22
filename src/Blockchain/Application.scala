@@ -10,19 +10,19 @@ import Common._
 
 trait IBusinessLogicFactory {
   def createGenesisBlock(seed: String): GenesisBlockTest1
-  def createNormalBlock(index: IndexV1, parentId: IdV1, trustworthiness: TrustworthinessV1, data: Array[Byte]): NormalBlockTest1
+  def createNormalBlock(index: Long, parentId: IdV1, trustworthiness: TrustworthinessV1, data: Array[Byte]): NormalBlockTest1
   def createBlockchain(gblock: GenesisBlockTest1): IBlockChain
 }
 
 object StandardBusinessLogicFactory extends IBusinessLogicFactory {
   def createGenesisBlock(seed: String): GenesisBlockTest1 = new GenesisBlockTest1(seed)
-  def createNormalBlock(index: IndexV1, parentId: IdV1, trustworthiness: TrustworthinessV1, data: Array[Byte]): NormalBlockTest1 = new NormalBlockTest1(index, parentId, trustworthiness, data)
+  def createNormalBlock(index: Long, parentId: IdV1, trustworthiness: TrustworthinessV1, data: Array[Byte]): NormalBlockTest1 = new NormalBlockTest1(index, parentId, trustworthiness, data)
   def createBlockchain(gblock: GenesisBlockTest1) = new BlockTree(gblock)
 }
 
 object StandardBusinessLogicFactoryIndexed extends IBusinessLogicFactory {
   def createGenesisBlock(seed: String): GenesisBlockTest1 = new GenesisBlockTest1(seed)
-  def createNormalBlock(index: IndexV1, parentId: IdV1, trustworthiness: TrustworthinessV1, data: Array[Byte]): NormalBlockTest1 = new NormalBlockTest1(index, parentId, trustworthiness, data)
+  def createNormalBlock(index: Long, parentId: IdV1, trustworthiness: TrustworthinessV1, data: Array[Byte]): NormalBlockTest1 = new NormalBlockTest1(index, parentId, trustworthiness, data)
   def createBlockchain(gblock: GenesisBlockTest1) = new IndexedBlockTree(gblock)
 }
 
@@ -56,7 +56,7 @@ class CreateBlockBusinessLogic(settings: BlockchainSettings) extends ICreateBloc
   val powBlockCreator: POWBlockCreator = new POWBlockCreator(settings)
 
   def doCreatePOWGenesisBlock(): Either[POWGenesisBlockTest2, String] = Left(new POWGenesisBlockTest2(settings))
-  def doCreatePOWNormalBlock(): Either[POWNormalBlockTest2, String] = powBlockCreator.createBlock(new IndexV1(__.getRandomInt(Int.MaxValue)), new IdV1(__.getRandomBytes(settings.hashAlgorithmProperty.lengthByte).toArray), System.currentTimeMillis(), settings.initialTarget, __.getRandomBytes(32).toArray)
+  def doCreatePOWNormalBlock(): Either[POWNormalBlockTest2, String] = powBlockCreator.createBlock(__.getRandomInt(Int.MaxValue), new IdV1(__.getRandomBytes(settings.hashAlgorithmProperty.lengthByte).toArray), System.currentTimeMillis(), settings.initialTarget, __.getRandomBytes(32).toArray)
 }
 
 trait IPerformanceBusinessLogic {
@@ -72,7 +72,7 @@ class PerformanceBusinessLogic(factory: IBusinessLogicFactory) extends IPerforma
     var head: BlockBaseV1 = gblock
     blocks += gblock
     for (i <- 0 until nBlock) {
-      val nblock: NormalBlockTest1 = factory.createNormalBlock(new IndexV1(head.index.index + 1), head.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
+      val nblock: NormalBlockTest1 = factory.createNormalBlock(head.index + 1, head.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
       blockchain.addBlock(nblock)
       head = nblock
       blocks += nblock
@@ -94,7 +94,7 @@ class PerformanceBusinessLogic(factory: IBusinessLogicFactory) extends IPerforma
     val gblock: GenesisBlockTest1 = factory.createGenesisBlock(__.getRandomPrintableString(32))
     var head: BlockBaseV1 = gblock
     for (i <- 0 until n) {
-      val nblock: NormalBlockTest1 = factory.createNormalBlock(new IndexV1(head.index.index + 1), head.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
+      val nblock: NormalBlockTest1 = factory.createNormalBlock(head.index + 1, head.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
       head = nblock
       nblocks += nblock
     }
@@ -130,7 +130,7 @@ class BusinessLogic(factory: IBusinessLogicFactory) extends IBusinessLogic {
     parent match {
       case Some(p) =>
         val cIndex: Int = index + 1
-        val nblock: NormalBlockTest1 = factory.createNormalBlock(new IndexV1(cIndex), p.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
+        val nblock: NormalBlockTest1 = factory.createNormalBlock(cIndex, p.id, new TrustworthinessV1(BigInteger.valueOf(__.getRandomInt(10))), __.getRandomBytes(32).toArray)
         bc.addBlock(nblock)
         __.getFromListBuffer(blocksMap, cIndex) match {
           case Some(cblocks) => cblocks += nblock

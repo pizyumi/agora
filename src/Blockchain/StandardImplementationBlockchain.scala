@@ -19,9 +19,9 @@ trait BlockTreeBase extends IBlockChain {
   //指定した識別子のブロック木を取得する
   protected def getBlockTree(id: IId): Option[ITree[IBlock]]
   //指定した番号の有効なブロック木を取得する
-  protected def getActiveBlockTree(index: IIndex): Option[ITree[IBlock]]
+  protected def getActiveBlockTree(index: Long): Option[ITree[IBlock]]
   //指定した番号の有効なブロック木を変更する
-  protected def changeActiveBlockTree(index: IIndex, blockTree: Option[ITree[IBlock]]): Unit
+  protected def changeActiveBlockTree(index: Long, blockTree: Option[ITree[IBlock]]): Unit
   //親ブロック木にブロック木を追加する
   protected def addBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit
   //親ブロック木からブロック木を削除する
@@ -42,7 +42,7 @@ trait BlockTreeBase extends IBlockChain {
             case Some(pId) =>
               getBlockTree(pId) match {
                 case Some(pt) =>
-                  if (pt.getValue.index.moveForward(1) != block.index) {
+                  if (pt.getValue.index + 1 != block.index) {
                     Right("the block's index is wrong")
                   }
                   else {
@@ -71,7 +71,7 @@ trait BlockTreeBase extends IBlockChain {
 
     var bt: ITree[IBlock] = blockTree
     var f: Boolean = true
-    while (bt.getValue.index.isGreat(activeHead.getValue.index) && f) {
+    while (bt.getValue.index > activeHead.getValue.index && f) {
       bt.getParent match {
         case Some(pt) =>
           cumulativeTrustworthiness = cumulativeTrustworthiness.add(pt.getValue.trustworthiness).asInstanceOf[ITrustworthiness]
@@ -88,7 +88,7 @@ trait BlockTreeBase extends IBlockChain {
       else {
         var activebt: ITree[IBlock] = activeHead
         var f2: Boolean = true
-        while (activebt.getValue.index.isGreat(bt.getValue.index) && f2) {
+        while (activebt.getValue.index > bt.getValue.index && f2) {
           activebt.getParent match {
             case Some(pt) =>
               activeCumulativeTrustworthiness = activeCumulativeTrustworthiness.add(pt.getValue.trustworthiness).asInstanceOf[ITrustworthiness]
@@ -173,7 +173,7 @@ trait BlockTreeBase extends IBlockChain {
   private def changeActiveBlockchain(head: ValueTree[IBlock]) = {
     var ablockTree: ITree[IBlock] = activeHead
     var f: Boolean = true
-    while (ablockTree.getValue.index.isGreat(head.getValue.index) && f) {
+    while (ablockTree.getValue.index > head.getValue.index && f) {
       changeActiveBlockTree(ablockTree.getValue.index, None)
       ablockTree.getParent match {
         case Some(pt) => ablockTree = pt
@@ -266,27 +266,13 @@ trait BlockTreeBase extends IBlockChain {
   def getHeadBlock: IBlock = activeHead.getValue
 
   //指定した番号の有効なブロックを取得する
-  def getActiveBlock(index: IIndex): Option[IBlock] = {
-    if (index == null) {
-      None
-    }
-    else {
-      getActiveBlockTree(index).map((abt) => abt.getValue)
-    }
-  }
+  def getActiveBlock(index: Long): Option[IBlock] = getActiveBlockTree(index).map((abt) => abt.getValue)
 
   //先頭ブロックから指定した個数分の有効なブロックを取得する
   def getBlockchain(n: Int): Traversable[IBlock] = getPath(activeHead, n)
 
   //指定した番号から指定した個数分の有効なブロックを取得する
-  def getBlockchain(index: IIndex, n: Int): Option[Traversable[IBlock]] = {
-    if (index == null) {
-      None
-    }
-    else {
-      getActiveBlockTree(index).map((ab) => getPath(ab, n))
-    }
-  }
+  def getBlockchain(index: Long, n: Int): Option[Traversable[IBlock]] = getActiveBlockTree(index).map((ab) => getPath(ab, n))
 
   //指定したブロックから指定した個数分のブロックを取得する
   private def getPath(block: ITree[IBlock], n: Int): Traversable[IBlock] = {
@@ -350,15 +336,15 @@ class IndexedBlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
   //ブロックの識別子からブロックへの参照
   protected val mapIdToBlockTree: scala.collection.mutable.Map[IId, ITree[IBlock]] = scala.collection.mutable.Map()
   //ブロックの番号からブロックの集まりへの参照
-  protected val mapIndexToBlockTrees: scala.collection.mutable.Map[IIndex, IndexBlockTrees] = scala.collection.mutable.Map()
+  protected val mapIndexToBlockTrees: scala.collection.mutable.Map[Long, IndexBlockTrees] = scala.collection.mutable.Map()
 
   //指定した識別子のブロック木が含まれているか
   protected override def isContainBlockTree(id: IId): Boolean = mapIdToBlockTree.contains(id)
   //指定した識別子のブロック木を取得する
   protected override def getBlockTree(id: IId): Option[ITree[IBlock]] = mapIdToBlockTree.get(id)
   //指定した番号の有効なブロック木を取得する
-  protected override def getActiveBlockTree(index: IIndex): Option[ITree[IBlock]] = {
-    if (index.isGreat(activeHead.getValue.index)) {
+  protected override def getActiveBlockTree(index: Long): Option[ITree[IBlock]] = {
+    if (index > activeHead.getValue.index) {
       None
     }
     else {
@@ -366,7 +352,7 @@ class IndexedBlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
     }
   }
   //指定した番号の有効なブロック木を変更する
-  protected override def changeActiveBlockTree(index: IIndex, blockTree: Option[ITree[IBlock]]): Unit = mapIndexToBlockTrees(index).activeBlockTree = blockTree
+  protected override def changeActiveBlockTree(index: Long, blockTree: Option[ITree[IBlock]]): Unit = mapIndexToBlockTrees(index).activeBlockTree = blockTree
   //親ブロック木にブロック木を追加する
   protected override def addBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = {
     pt.addChild(bt)
@@ -407,8 +393,8 @@ class BlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
   //指定した識別子のブロック木を取得する
   protected override def getBlockTree(id: IId): Option[ITree[IBlock]] = blockTree.descendantTrees().find((t) => t.getValue.id == id)
   //指定した番号の有効なブロック木を取得する
-  protected override def getActiveBlockTree(index: IIndex): Option[ITree[IBlock]] = {
-    if (index.isGreat(activeHead.getValue.index)) {
+  protected override def getActiveBlockTree(index: Long): Option[ITree[IBlock]] = {
+    if (index > activeHead.getValue.index) {
       None
     }
     else {
@@ -429,7 +415,7 @@ class BlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
     }
   }
   //指定した番号の有効なブロック木を変更する
-  protected override def changeActiveBlockTree(index: IIndex, blockTree: Option[ITree[IBlock]]): Unit = {}
+  protected override def changeActiveBlockTree(index: Long, blockTree: Option[ITree[IBlock]]): Unit = {}
   //親ブロック木にブロック木を追加する
   protected override def addBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = pt.addChild(bt)
   //親ブロック木からブロック木を削除する
