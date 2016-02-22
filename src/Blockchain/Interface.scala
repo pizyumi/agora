@@ -50,6 +50,8 @@ trait IBlockChain extends IConvalidatableItems[IBlock] {
   def getBlock(id: IId): Option[IBlock]
   //親ブロックを取得する
   def getParentBlock(block: IBlock): Option[IBlock]
+  //指定した個数分の親ブロックを取得する
+  def getParentBlocks(block: IBlock, n: Int): Option[Traversable[IBlock]]
   //子ブロックを取得する
   def getChildBlocks(block: IBlock): Option[Traversable[IBlock]]
   //ブロックが含まれている場合にはtrueを返し、含まれていない場合にはfalseを返す

@@ -98,24 +98,55 @@ class TrustworthinessV1(trustworthinessIn: BigInteger) extends ITrustworthiness 
 }
 
 object BlockchainSettings {
-  lazy val defaultSettings: BlockchainSettings = new BlockchainSettings(defaultHashAlgorithm, defaultSeed, defaultInitialTimestamp, defaultInitialTarget, defaultMaxLengthNonce)
+  lazy val defaultSettings: BlockchainSettings = new BlockchainSettings(
+    defaultHashAlgorithm,
+    defaultSeed,
+    defaultInitialTimestamp,
+    defaultInitialTarget,
+    defaultMaxLengthNonce,
+    defaultRetargetBlock,
+    defaultBlockGenerationInterval,
+    defaultmaxRetargetChangeRate,
+    defaultminRetargetChangeRate
+  )
 
-  lazy val haSha256: String = "sha256"
-  lazy val haProperties: Map[String, HashAlgorithmProperty] = Map(haSha256 -> new HashAlgorithmProperty(32))
+  val haSha256: String = "sha256"
+  val haProperties: Map[String, HashAlgorithmProperty] = Map(haSha256 -> new HashAlgorithmProperty(32))
 
-  lazy val defaultHashAlgorithm: String = haSha256
-  lazy val defaultSeed: String = "seed"
-  lazy val defaultInitialTimestamp: Long = 0
-  lazy val defaultInitialTarget: IdV1 = new IdV1(Array(UByte.__(0), UByte.__(127), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255)))
-  lazy val defaultMaxLengthNonce: Int = 8
+  val defaultHashAlgorithm: String = haSha256
+  val defaultSeed: String = "seed"
+  val defaultInitialTimestamp: Long = 0
+  val defaultInitialTarget: IdV1 = new IdV1(Array(UByte.__(0), UByte.__(127), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255)))
+  val defaultMaxLengthNonce: Int = 8
+  val defaultRetargetBlock: Int = 16
+  val defaultBlockGenerationInterval: Int = 10
+  val defaultmaxRetargetChangeRate: Double = 4.0
+  val defaultminRetargetChangeRate: Double = 0.25
 }
-class BlockchainSettings(hashAlgorithmIn: String, seedIn: String, initialTimestampIn: Long, initialTargetIn: IdV1, maxLengthNonceIn: Int) {
+class BlockchainSettings(
+  hashAlgorithmIn: String,
+  seedIn: String,
+  initialTimestampIn: Long,
+  initialTargetIn: IdV1,
+  maxLengthNonceIn: Int,
+  retargetBlockIn: Int,
+  blockGenerationIntervalIn: Int,
+  maxRetargetChangeRateIn: Double,
+  minRetargetChangerateIn: Double
+) {
   val hashAlgorithm: String = hashAlgorithmIn
   val hashAlgorithmProperty: HashAlgorithmProperty = BlockchainSettings.haProperties(hashAlgorithmIn)
   val seed: String = seedIn
   val initialTimestamp: Long = initialTimestampIn
   val initialTarget: IdV1 = initialTargetIn
-  val diff1Target: IdV1 = {
+  val maxLengthNonce: Int = maxLengthNonceIn
+  val retargetBlock: Int = retargetBlockIn
+  val blockGenerationInterval: Int = blockGenerationIntervalIn
+  val retargetTime: Int = retargetBlockIn * blockGenerationIntervalIn
+  val maxRetargetChangeRate: Double = maxRetargetChangeRateIn
+  val minRetargetChangerate: Double = minRetargetChangerateIn
+
+  lazy val diff1Target: IdV1 = {
     val array: Array[Byte] = new Array[Byte](hashAlgorithmProperty.lengthByte)
     for (i <- array.indices) {
       if (i < 4) {
@@ -127,7 +158,6 @@ class BlockchainSettings(hashAlgorithmIn: String, seedIn: String, initialTimesta
     }
     new IdV1(array)
   }
-  val maxLengthNonce: Int = maxLengthNonceIn
 }
 
 class HashAlgorithmProperty(lengthByteIn: Int) {

@@ -4,6 +4,10 @@ import scala.collection.mutable.ListBuffer
 
 import Common._
 
+//TODO: ブロック鎖実装の効率化
+//ブロック鎖に制約を加えて効率化する
+//累積信用度が大きくなる場合にしか追加できないようにする
+
 trait BlockTreeBase extends IBlockChain {
   //ブロック木
   protected val blockTree: ValueTree[IBlock]
@@ -218,6 +222,16 @@ trait BlockTreeBase extends IBlockChain {
     }
   }
 
+  //指定した個数分の親ブロックを取得する
+  def getParentBlocks(block: IBlock, n: Int): Option[Traversable[IBlock]] = {
+    if (block == null) {
+      None
+    }
+    else {
+      getBlockTree(block.id).flatMap((bt) => bt.getParent).map((pb) => getPath(pb, n))
+    }
+  }
+
   //子ブロックを取得する
   def getChildBlocks(block: IBlock): Option[Traversable[IBlock]] = {
     if (block == null) {
@@ -425,4 +439,42 @@ class BlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
   protected override def validateBlock(block: IBlock): Either[Unit, String] = isConvalidWithMessage(block)
 
   protected override def specConvalidatableItems: Map[String, (IBlock) => Either[Unit, String]] = Map()
+}
+
+//POWブロック鎖
+class POWBlockchain(settings: BlockchainSettings, genesis: IGenesisBlock) extends IndexedBlockTree(genesis) {
+  //ブロックを検証する
+  protected override def validateBlock(block: IBlock): Either[Unit, String] = {
+    if (!block.isInstanceOf[POWNormalBlockTest2]) {
+      Right("the block is not supported")
+    }
+    else {
+      var validation: Either[Unit, String] = Left()
+      block match {
+        case _: IValidatableItems => validation = block.asInstanceOf[IValidatableItems].isValidWithMessage
+        case _: IValidatable => validation = block.asInstanceOf[IValidatable].isValidWithMessage
+      }
+      validation match {
+        case Left(_) => isConvalidWithMessage(block)
+        case Right(_) => validation
+      }
+    }
+  }
+
+//  protected def getTarget(pt: ITree[IBlock]): IdV1 = {
+//    if (pt.getValue.)
+//  }
+
+//  protected def isValidTarget: Either[Unit, String] = {
+//    if (__.bytesToPositiveBigInteger(id.id).compareTo(__.bytesToPositiveBigInteger(target.id)) <= 0) {
+//      Left()
+//    }
+//    else {
+//      Right("id is too large")
+//    }
+//  }
+
+  protected override def specConvalidatableItems: Map[String, (IBlock) => Either[Unit, String]] = Map(
+
+  )
 }
