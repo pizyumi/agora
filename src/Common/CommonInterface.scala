@@ -158,6 +158,72 @@ trait IValidatableItems extends IValidatable {
   }
 }
 
+trait IConvalidatable[T] {
+  protected def specIsConvalid(con: T): Either[Unit, String]
+
+  def isConvalid(con: T): Boolean = specIsConvalid(con).isLeft
+  def isConvalidWithMessage(con: T): Either[Unit, String] = specIsConvalid(con)
+}
+
+trait IConvalidatableItems[T] extends IConvalidatable[T] {
+  private val convalidationResults: scala.collection.mutable.Map[String, Either[Unit, String]] = scala.collection.mutable.Map()
+
+  protected def specConvalidatableItems: Map[String, T => Either[Unit, String]]
+
+  protected override def specIsConvalid(con: T): Either[Unit, String] = {
+    specConvalidatableItems.view.map((item) => {
+      if(convalidationResults.contains(item._1)) {
+        convalidationResults(item._1)
+      }
+      else {
+        val result: Either[Unit, String] = item._2(con)
+        convalidationResults.+= (item._1 -> result)
+        result
+      }
+    }).find((item) => item.isRight) match {
+      case Some(either) => either
+      case None => Left()
+    }
+  }
+
+  def convalidatableItemsName: Array[String] = specConvalidatableItems.keys.toArray
+
+  def isConvalidAllItems(con: T): Boolean = isConvalidAllItemsWithMessages(con).isLeft
+  def isConvalidAllItemsWithMessages(con: T): Either[Unit, Array[String]] = {
+    val messages: Array[Either[Unit, String]] = specConvalidatableItems.view.map((item) => {
+      if(convalidationResults.contains(item._1)) {
+        convalidationResults(item._1)
+      }
+      else {
+        val result: Either[Unit, String] = item._2(con)
+        convalidationResults.+= (item._1 -> result)
+        result
+      }
+    }).filter((item) => item.isRight).toArray
+    if (messages.length == 0) {
+      Left()
+    }
+    else {
+      Right(messages.map((elem) => elem.right.get))
+    }
+  }
+
+  def isConvalidItem(name: String, con: T): Boolean = isConvalidItemWithMessage(name, con).isLeft
+  def isConvalidItemWithMessage(name: String, con: T): Either[Unit, String] = {
+    if (convalidationResults.contains(name)) {
+      convalidationResults(name)
+    }
+    else if (specConvalidatableItems.contains(name)) {
+      val result: Either[Unit, String] = specConvalidatableItems(name)(con)
+      convalidationResults.+= (name -> result)
+      result
+    }
+    else {
+      Right("the item does not exist.")
+    }
+  }
+}
+
 trait IIdentifiable[T <: ICompareOrder] {
   protected def specGetComparableId: T
 

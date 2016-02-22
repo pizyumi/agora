@@ -23,32 +23,39 @@ trait BlockTreeBase extends IBlockChain {
   //親ブロック木からブロック木を削除する
   protected def removeBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit
 
+  //ブロックを検証する
+  protected def validateBlock(block: IBlock): Either[Unit, String]
+
   //ブロックを追加する
   def addBlock(block: IBlock): Either[Unit, String] = {
     if (block == null) {
       Right("the block is null")
     }
     else {
-      block.parentId match {
-        case Some(pId) =>
-          getBlockTree(pId) match {
-            case Some(pt) =>
-              if (pt.getValue.index.moveForward(1) != block.index) {
-                Right("the block's index is wrong")
+      validateBlock(block) match {
+        case Left(_) =>
+          block.parentId match {
+            case Some(pId) =>
+              getBlockTree(pId) match {
+                case Some(pt) =>
+                  if (pt.getValue.index.moveForward(1) != block.index) {
+                    Right("the block's index is wrong")
+                  }
+                  else {
+                    pt.getChildren.find((t) => t.getValue.id == block.id) match {
+                      case Some(_) => Right("the block is already in the blockchain")
+                      case None =>
+                        val bt: ValueTree[IBlock] = new ValueTree(block, ListBuffer(), Some(pt))
+                        addBlockTree(pt, bt)
+                        challenge(bt)
+                        Left()
+                    }
+                  }
+                case None => Right("the block's parent block is not in the blockchain")
               }
-              else {
-                pt.getChildren.find((t) => t.getValue.id == block.id) match {
-                  case Some(_) => Right("the block is already in the blockchain")
-                  case None =>
-                    val bt: ValueTree[IBlock] = new ValueTree(block, ListBuffer(), Some(pt))
-                    addBlockTree(pt, bt)
-                    challenge(bt)
-                    Left()
-                }
-              }
-            case None => Right("the block's parent block is not in the blockchain")
+            case None => Right("the block's parent id is not specified")
           }
-        case None => Right("the block's parent id is not specified")
+        case Right(msg) => Right("the block does not validate (" + msg + ")")
       }
     }
   }
@@ -332,11 +339,11 @@ class IndexedBlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
   protected val mapIndexToBlockTrees: scala.collection.mutable.Map[IIndex, IndexBlockTrees] = scala.collection.mutable.Map()
 
   //指定した識別子のブロック木が含まれているか
-  protected def isContainBlockTree(id: IId): Boolean = mapIdToBlockTree.contains(id)
+  protected override def isContainBlockTree(id: IId): Boolean = mapIdToBlockTree.contains(id)
   //指定した識別子のブロック木を取得する
-  protected def getBlockTree(id: IId): Option[ITree[IBlock]] = mapIdToBlockTree.get(id)
+  protected override def getBlockTree(id: IId): Option[ITree[IBlock]] = mapIdToBlockTree.get(id)
   //指定した番号の有効なブロック木を取得する
-  protected def getActiveBlockTree(index: IIndex): Option[ITree[IBlock]] = {
+  protected override def getActiveBlockTree(index: IIndex): Option[ITree[IBlock]] = {
     if (index.isGreat(activeHead.getValue.index)) {
       None
     }
@@ -345,9 +352,9 @@ class IndexedBlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
     }
   }
   //指定した番号の有効なブロック木を変更する
-  protected def changeActiveBlockTree(index: IIndex, blockTree: Option[ITree[IBlock]]): Unit = mapIndexToBlockTrees(index).activeBlockTree = blockTree
+  protected override def changeActiveBlockTree(index: IIndex, blockTree: Option[ITree[IBlock]]): Unit = mapIndexToBlockTrees(index).activeBlockTree = blockTree
   //親ブロック木にブロック木を追加する
-  protected def addBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = {
+  protected override def addBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = {
     pt.addChild(bt)
     mapIdToBlockTree.put(bt.getValue.id, bt)
     if (mapIndexToBlockTrees.contains(bt.getValue.index)) {
@@ -360,7 +367,7 @@ class IndexedBlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
     }
   }
   //親ブロック木からブロック木を削除する
-  protected def removeBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = {
+  protected override def removeBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = {
     pt.removeChild(bt)
     mapIdToBlockTree.remove(bt.getValue.id)
     val indexBlockTrees = mapIndexToBlockTrees(bt.getValue.index)
@@ -369,6 +376,11 @@ class IndexedBlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
       mapIndexToBlockTrees.remove(bt.getValue.index)
     }
   }
+
+  //ブロックを検証する
+  protected override def validateBlock(block: IBlock): Either[Unit, String] = isConvalidWithMessage(block)
+
+  protected override def specConvalidatableItems: Map[String, (IBlock) => Either[Unit, String]] = Map()
 }
 
 //ブロック鎖
@@ -377,11 +389,11 @@ class BlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
   protected val blockTree: ValueTree[IBlock] = new ValueTree(genesis, ListBuffer(), None)
 
   //指定した識別子のブロック木が含まれているか
-  protected def isContainBlockTree(id: IId): Boolean = blockTree.descendants().exists((b) => b.id == id)
+  protected override def isContainBlockTree(id: IId): Boolean = blockTree.descendants().exists((b) => b.id == id)
   //指定した識別子のブロック木を取得する
-  protected def getBlockTree(id: IId): Option[ITree[IBlock]] = blockTree.descendantTrees().find((t) => t.getValue.id == id)
+  protected override def getBlockTree(id: IId): Option[ITree[IBlock]] = blockTree.descendantTrees().find((t) => t.getValue.id == id)
   //指定した番号の有効なブロック木を取得する
-  protected def getActiveBlockTree(index: IIndex): Option[ITree[IBlock]] = {
+  protected override def getActiveBlockTree(index: IIndex): Option[ITree[IBlock]] = {
     if (index.isGreat(activeHead.getValue.index)) {
       None
     }
@@ -403,9 +415,14 @@ class BlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
     }
   }
   //指定した番号の有効なブロック木を変更する
-  protected def changeActiveBlockTree(index: IIndex, blockTree: Option[ITree[IBlock]]): Unit = {}
+  protected override def changeActiveBlockTree(index: IIndex, blockTree: Option[ITree[IBlock]]): Unit = {}
   //親ブロック木にブロック木を追加する
-  protected def addBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = pt.addChild(bt)
+  protected override def addBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = pt.addChild(bt)
   //親ブロック木からブロック木を削除する
-  protected def removeBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = pt.removeChild(bt)
+  protected override def removeBlockTree(pt: ITree[IBlock], bt: ITree[IBlock]): Unit = pt.removeChild(bt)
+
+  //ブロックを検証する
+  protected override def validateBlock(block: IBlock): Either[Unit, String] = isConvalidWithMessage(block)
+
+  protected override def specConvalidatableItems: Map[String, (IBlock) => Either[Unit, String]] = Map()
 }

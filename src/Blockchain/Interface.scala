@@ -40,7 +40,7 @@ trait IPOW extends IValidatableItems {
 }
 
 //ブロック鎖を表す
-trait IBlockChain {
+trait IBlockChain extends IConvalidatableItems[IBlock] {
   //ブロックを追加する
   def addBlock(block: IBlock): Either[Unit, String]
   //ブロックを削除する
