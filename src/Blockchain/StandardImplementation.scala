@@ -103,7 +103,7 @@ class BlockchainSettings(
   retargetBlockIn: Int,
   blockGenerationIntervalIn: Int,
   maxRetargetChangeRateIn: Double,
-  minRetargetChangerateIn: Double
+  minRetargetChangeRateIn: Double
 ) {
   val hashAlgorithm: String = hashAlgorithmIn
   val hashAlgorithmProperty: HashAlgorithmProperty = BlockchainSettings.haProperties(hashAlgorithmIn)
@@ -115,7 +115,9 @@ class BlockchainSettings(
   val blockGenerationInterval: Int = blockGenerationIntervalIn
   val retargetTime: Int = retargetBlockIn * blockGenerationIntervalIn
   val maxRetargetChangeRate: Double = maxRetargetChangeRateIn
-  val minRetargetChangerate: Double = minRetargetChangerateIn
+  val minRetargetChangeRate: Double = minRetargetChangeRateIn
+  val maxActualTime: Long = (retargetBlockIn * blockGenerationIntervalIn * maxRetargetChangeRateIn).toLong
+  val minActualTime: Long = (retargetBlockIn * blockGenerationIntervalIn * minRetargetChangeRateIn).toLong
 
   lazy val diff1Target: IdV1 = {
     val array: Array[Byte] = new Array[Byte](hashAlgorithmProperty.lengthByte)
@@ -134,7 +136,11 @@ class BlockchainSettings(
 class HashAlgorithmProperty(lengthByteIn: Int) {
   val lengthByte: Int = lengthByteIn
 
-  lazy val langthBit: Int = lengthByte * 8
+  val langthBit: Int = lengthByteIn * 8
+  val minValue: Array[Byte] = __.getMinBytes(lengthByteIn)
+  val minBigInt: BigInteger = __.bytesToPositiveBigInteger(__.getMinBytes(lengthByteIn))
+  val maxValue: Array[Byte] = __.getMaxBytes(lengthByteIn)
+  val maxBigInt: BigInteger = __.bytesToPositiveBigInteger(__.getMaxBytes(lengthByteIn))
 }
 
 //ブロックの標準実装

@@ -1,5 +1,7 @@
 package Blockchain
 
+import java.math.BigInteger
+
 import scala.collection.mutable.ListBuffer
 
 import Common._
@@ -447,9 +449,41 @@ class POWBlockchain(settings: BlockchainSettings, genesis: IGenesisBlock) extend
     }
   }
 
-//  protected def getTarget(pt: ITree[IBlock]): IdV1 = {
-//    if (pt.getValue.)
-//  }
+  protected def getTarget(pt: ITree[IBlock]): IdV1 = {
+    if (pt.getValue.index < settings.blockGenerationInterval) {
+      settings.initialTarget
+    }
+    else {
+      if (pt.getValue.index % settings.blockGenerationInterval == 0) {
+        val timestamp1: Long = pt.getValue.asInstanceOf[POWBlockBaseV1].timestamp
+        var t: ITree[IBlock] = pt
+        for (i <- 0 until settings.blockGenerationInterval) {
+          t.getParent match {
+            case Some(b) => t = b
+            case None =>
+          }
+        }
+        val timestamp2: Long = t.getValue.asInstanceOf[POWBlockBaseV1].timestamp
+        var timespan: Long = timestamp2 - timestamp1
+        if (timespan < settings.minActualTime) {
+          timespan = settings.minActualTime
+        }
+        if (timespan > settings.maxActualTime) {
+          timespan = settings.maxActualTime
+        }
+        val rate: Double = timespan.toDouble / settings.retargetTime.toDouble
+        val ptTargetBigInt: BigInteger = __.bytesToPositiveBigInteger(pt.getValue.asInstanceOf[POWBlockBaseV1].target.id)
+        var targetBigInt: BigInteger = ptTargetBigInt.multiply(BigInteger.valueOf((rate * 100000000).toLong)).divide(BigInteger.valueOf(100000000))
+        if (targetBigInt.compareTo(settings.hashAlgorithmProperty.maxBigInt) > 0) {
+          targetBigInt = settings.hashAlgorithmProperty.maxBigInt
+        }
+        new IdV1(__.positiveBigIntegerToBytes(targetBigInt, settings.hashAlgorithmProperty.lengthByte))
+      }
+      else {
+        pt.getValue.asInstanceOf[POWBlockBaseV1].target
+      }
+    }
+  }
 
 //  protected def isValidTarget: Either[Unit, String] = {
 //    if (__.bytesToPositiveBigInteger(id.id).compareTo(__.bytesToPositiveBigInteger(target.id)) <= 0) {

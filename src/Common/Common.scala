@@ -187,6 +187,22 @@ object __ {
     new BigInteger(bytes)
   }
 
+  def getMinBytes(n: Int): Array[Byte] = {
+    val bytes: Array[Byte] = new Array[Byte](n)
+    for (i <- 0 until n) {
+      bytes(i) = UByte.__(0)
+    }
+    bytes
+  }
+
+  def getMaxBytes(n: Int): Array[Byte] = {
+    val bytes: Array[Byte] = new Array[Byte](n)
+    for (i <- 0 until n) {
+      bytes(i) = UByte.__(255)
+    }
+    bytes
+  }
+
   def parseInts(str: String, n: Int): Option[Array[Int]] = {
     val args: Array[String] = str.split(' ')
     if (args.length < n) {
