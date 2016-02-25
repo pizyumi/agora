@@ -250,8 +250,8 @@ class POWGenesisBlockTest2(settings: BlockchainSettings) extends GenesisBlockTes
 }
 
 object POWNormalBlockTest2 {
-  lazy val validationNameTarget: String = "target"
-  lazy val validationNameNonce: String = "nonce"
+  val validationNameId: String = "id"
+  val validationNameNonce: String = "nonce"
 }
 class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: Long, parentIdIn: IdV1, timestampIn: Long, targetIn: IdV1, nonceIn: Array[Byte], dataIn: Array[Byte]) extends NormalBlockTest2(indexIn, parentIdIn, dataIn) with POWBlockBaseV1 {
   lazy val trustworthiness: TrustworthinessV1 = toTrustworthiness
@@ -287,7 +287,7 @@ class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: Long, parentIdI
   }
 
   protected override def specValidatableItems: Map[String, () => Either[Unit, String]] = Map(
-    POWNormalBlockTest2.validationNameTarget -> (() => isValidId),
+    POWNormalBlockTest2.validationNameId -> (() => isValidId),
     POWNormalBlockTest2.validationNameNonce -> (() => isValidNonce)
   )
 
@@ -299,12 +299,12 @@ class POWBlockCreator(settings: BlockchainSettings) {
     var bi: BigInteger = BigInteger.ZERO
     var nonce: Array[Byte] = bi.toByteArray
     var block: POWNormalBlockTest2 = new POWNormalBlockTest2(settings, index, parentId, timestamp, target, nonce, data)
-    block.validatableItemsName.view.filter((name) => name != POWNormalBlockTest2.validationNameTarget && name != POWNormalBlockTest2.validationNameNonce).map((name) => block.isValidItemWithMessage(name)).find((r) => r.isRight) match {
+    block.validatableItemsName.view.filter((name) => name != POWNormalBlockTest2.validationNameId && name != POWNormalBlockTest2.validationNameNonce).map((name) => block.isValidItemWithMessage(name)).find((r) => r.isRight) match {
       case Some(either) => Right(either.right.get)
       case None =>
         var f: Boolean = true
         while (f) {
-          if (block.isValidItem(POWNormalBlockTest2.validationNameTarget)) {
+          if (block.isValidItem(POWNormalBlockTest2.validationNameId)) {
             f = false
           }
           else {

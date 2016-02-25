@@ -430,6 +430,9 @@ class BlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
 }
 
 //POWブロック鎖
+object POWBlockchain {
+  val validationNameTarget: String = "target"
+}
 class POWBlockchain(settings: BlockchainSettings, genesis: IGenesisBlock) extends IndexedBlockTree(genesis) {
   //ブロックを検証する
   protected override def validateBlock(block: IBlock): Either[Unit, String] = {
@@ -485,16 +488,23 @@ class POWBlockchain(settings: BlockchainSettings, genesis: IGenesisBlock) extend
     }
   }
 
-//  protected def isValidTarget: Either[Unit, String] = {
-//    if (__.bytesToPositiveBigInteger(id.id).compareTo(__.bytesToPositiveBigInteger(target.id)) <= 0) {
-//      Left()
-//    }
-//    else {
-//      Right("id is too large")
-//    }
-//  }
+  protected def isValidTarget(block: IBlock): Either[Unit, String] = {
+    block.parentId match {
+      case Some(pId) =>
+        getBlockTree(pId) match {
+          case Some(pt) =>
+            if (getTarget(pt).isSame(block.asInstanceOf[POWBlockBaseV1].target)) {
+              Left()
+            }
+            else {
+              Right("target is wrong")
+            }
+          case None => Right("the block's parent block is not in the blockchain")
+        }      case None => Right("the block's parent id is not specified")
+    }
+  }
 
   protected override def specConvalidatableItems: Map[String, (IBlock) => Either[Unit, String]] = Map(
-
+    POWBlockchain.validationNameTarget -> ((block) => isValidTarget(block))
   )
 }
