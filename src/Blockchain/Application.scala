@@ -204,7 +204,30 @@ class BusinessLogic(factory: IBusinessLogicFactory) extends IBusinessLogic {
   }
 }
 
+trait ISystem {
+  def doStartSystem(callback: (IBlock) => Unit): Either[Unit, String]
+  def doResumeSystem(callback: (IBlock) => Unit): Either[Unit, String]
+  def doStopSystem(): Either[Unit, String]
+}
+
+class System(factory: IBusinessLogicFactory) extends ISystem {
+  def doStartSystem(callback: (IBlock) => Unit): Either[Unit, String] = {
+    Left()
+  }
+
+  def doResumeSystem(callback: (IBlock) => Unit): Either[Unit, String] = {
+    Left()
+  }
+
+  def doStopSystem(): Either[Unit, String] = {
+    Left()
+  }
+}
+
 class CLIBase() {
+  lazy val startSystem: String = "start systen"
+  lazy val resumeSystem: String = "resume system"
+  lazy val stopSystem: String = "stop system"
   lazy val newBlockchain: String = "new blockchain"
   lazy val addBlockRandom: String = "add block random"
   lazy val addBlock: String = "add block"
@@ -305,9 +328,12 @@ class CLIBase() {
   }
 }
 
-class CLI(factory: ICLIFactory, logic: IBusinessLogic, clogic: ICreateBlockBusinessLogic, plogics: Map[String, IPerformanceBusinessLogic]) extends CLIBase() with ICLIComponent {
+class CLI(factory: ICLIFactory, system: ISystem, logic: IBusinessLogic, clogic: ICreateBlockBusinessLogic, plogics: Map[String, IPerformanceBusinessLogic]) extends CLIBase() with ICLIComponent {
   def getCommands: Traversable[Command] = {
     Array(
+      new Command(startSystem, executeStartSystem),
+      new Command(resumeSystem, executeResumeSystem),
+      new Command(stopSystem, executeStopSystem),
       new Command(newBlockchain, executeNewBlockchain),
       new Command(addBlockRandom, executeAddBlockRandom),
       new Command(addBlock, executeAddBlock),
@@ -316,6 +342,31 @@ class CLI(factory: ICLIFactory, logic: IBusinessLogic, clogic: ICreateBlockBusin
       new Command(checkBlockchainPerformanceAdd, executeCheckBlockchainPerformanceAdd),
       new Command(checkBlockchainPerformance, executeCheckBlockchainPerformance)
     )
+  }
+
+  private def callback(block: IBlock): Unit = {
+
+  }
+
+  private def executeStartSystem(args: String): Unit = {
+    system.doStartSystem(callback) match {
+      case Left(_) => println("system started")
+      case Right(message) => println(__.toErrorMessage(message))
+    }
+  }
+
+  private def executeResumeSystem(args: String): Unit = {
+    system.doResumeSystem(callback) match {
+      case Left(_) => println("system resumed")
+      case Right(message) => println(__.toErrorMessage(message))
+    }
+  }
+
+  private def executeStopSystem(args: String): Unit = {
+    system.doStopSystem() match {
+      case Left(_) => println("system stopped")
+      case Right(message) => println(__.toErrorMessage(message))
+    }
   }
 
   private def executeNewBlockchain(args: String): Unit = {
