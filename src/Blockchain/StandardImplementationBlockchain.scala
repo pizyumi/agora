@@ -14,7 +14,7 @@ trait BlockTreeBase extends IBlockChain {
   //ブロック木
   protected val blockTree: ValueTree[IBlock]
   //有効な先頭ブロック
-  protected var activeHead: ValueTree[IBlock] = blockTree
+  protected var activeHead: ValueTree[IBlock]
 
   //指定した識別子のブロック木が含まれているか
   protected def isContainBlockTree(id: IId): Boolean
@@ -335,10 +335,16 @@ class IndexBlockTrees() {
 class IndexedBlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
   //ブロック木
   protected val blockTree: ValueTree[IBlock] = new ValueTree(genesis, ListBuffer(), None)
+  //有効な先頭ブロック
+  protected var activeHead: ValueTree[IBlock] = blockTree
   //ブロックの識別子からブロックへの参照
-  protected val mapIdToBlockTree: scala.collection.mutable.Map[IId, ITree[IBlock]] = scala.collection.mutable.Map()
+  protected val mapIdToBlockTree: scala.collection.mutable.Map[IId, ITree[IBlock]] = scala.collection.mutable.Map(blockTree.getValue.id -> blockTree)
   //ブロックの番号からブロックの集まりへの参照
-  protected val mapIndexToBlockTrees: scala.collection.mutable.Map[Long, IndexBlockTrees] = scala.collection.mutable.Map()
+  protected val mapIndexToBlockTrees: scala.collection.mutable.Map[Long, IndexBlockTrees] = scala.collection.mutable.Map(0l -> {
+    val indexBlockTrees = new IndexBlockTrees()
+    indexBlockTrees.lb += blockTree
+    indexBlockTrees
+  })
 
   //指定した識別子のブロック木が含まれているか
   protected override def isContainBlockTree(id: IId): Boolean = mapIdToBlockTree.contains(id)
@@ -389,6 +395,8 @@ class IndexedBlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
 class BlockTree(genesis: IGenesisBlock) extends BlockTreeBase {
   //ブロック木
   protected val blockTree: ValueTree[IBlock] = new ValueTree(genesis, ListBuffer(), None)
+  //有効な先頭ブロック
+  protected var activeHead: ValueTree[IBlock] = blockTree
 
   //指定した識別子のブロック木が含まれているか
   protected override def isContainBlockTree(id: IId): Boolean = blockTree.descendants().exists((b) => b.id == id)
@@ -471,14 +479,14 @@ class POWBlockchain(settings: BlockchainSettings, genesis: IGenesisBlock) extend
           }
         }
         val timestamp2: Long = t.getValue.asInstanceOf[POWBlockBaseV1].timestamp
-        var timespan: Long = timestamp2 - timestamp1
-        if (timespan < settings.minActualTime) {
-          timespan = settings.minActualTime
+        var timespan: Long = timestamp1 - timestamp2
+        if (timespan < settings.minActualTime * 1000) {
+          timespan = settings.minActualTime * 1000
         }
-        if (timespan > settings.maxActualTime) {
-          timespan = settings.maxActualTime
+        if (timespan > settings.maxActualTime * 1000) {
+          timespan = settings.maxActualTime * 1000
         }
-        val rate: Double = timespan.toDouble / settings.retargetTime.toDouble
+        val rate: Double = timespan.toDouble / (settings.retargetTime * 1000).toDouble
         val ptTargetBigInt: BigInteger = __.bytesToPositiveBigInteger(pt.getValue.asInstanceOf[POWBlockBaseV1].target.id)
         var targetBigInt: BigInteger = ptTargetBigInt.multiply(BigInteger.valueOf((rate * 100000000).toLong)).divide(BigInteger.valueOf(100000000))
         if (targetBigInt.compareTo(settings.hashAlgorithmProperty.maxBigInt) > 0) {

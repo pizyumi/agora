@@ -223,16 +223,23 @@ class System() extends ISystem {
   var context: POWBlockCreatorContext = null
   var isRunning: Boolean = false
 
-  private def powMining(): Unit = {
-    blockchain match {
-      case Some(bc) =>
-        while (context.f) {
-          powBlockCreator.createBlock(bc.getHeadBlock.index + 1, bc.getHeadBlock.id.asInstanceOf[IdV1], System.currentTimeMillis(), bc.asInstanceOf[POWBlockchain].getHeadTarget, __.getRandomBytes(32).toArray, context) match {
-            case Left(b) => bc.addBlock(b)
-            case Right(_) =>
+  private def powMining(callback: (INormalBlock) => Unit): Unit = {
+    try {
+      blockchain match {
+        case Some(bc) =>
+          while (context.f) {
+            powBlockCreator.createBlock(bc.getHeadBlock.index + 1, bc.getHeadBlock.id.asInstanceOf[IdV1], System.currentTimeMillis(), bc.asInstanceOf[POWBlockchain].getHeadTarget, __.getRandomBytes(32).toArray, context) match {
+              case Left(b) =>
+                bc.addBlock(b)
+                callback(b)
+              case Right(_) =>
+            }
           }
-        }
-      case None =>
+        case None =>
+      }
+    }
+    catch {
+      case ex: Exception => ex.printStackTrace()
     }
   }
 
@@ -246,7 +253,7 @@ class System() extends ISystem {
           context = new POWBlockCreatorContext()
           context.f = true
           Future {
-            powMining()
+            powMining(callback)
           }
           isRunning = true
           Left()
@@ -266,7 +273,7 @@ class System() extends ISystem {
         else {
           context.f = true
           Future {
-            powMining()
+            powMining(callback)
           }
           isRunning = true
           Left()
@@ -287,16 +294,16 @@ class System() extends ISystem {
 }
 
 class CLIBase() {
-  lazy val startSystem: String = "start systen"
-  lazy val resumeSystem: String = "resume system"
-  lazy val stopSystem: String = "stop system"
-  lazy val newBlockchain: String = "new blockchain"
-  lazy val addBlockRandom: String = "add block random"
-  lazy val addBlock: String = "add block"
-  lazy val createPOWGenesisBlock: String = "create pow genesis block"
-  lazy val createPOWNormalBlock: String = "create pow normal block"
-  lazy val checkBlockchainPerformanceAdd: String = "check blockchain performance add"
-  lazy val checkBlockchainPerformance: String = "check blockchain performance"
+  val startSystem: String = "start system"
+  val resumeSystem: String = "resume system"
+  val stopSystem: String = "stop system"
+  val newBlockchain: String = "new blockchain"
+  val addBlockRandom: String = "add block random"
+  val addBlock: String = "add block"
+  val createPOWGenesisBlock: String = "create pow genesis block"
+  val createPOWNormalBlock: String = "create pow normal block"
+  val checkBlockchainPerformanceAdd: String = "check blockchain performance add"
+  val checkBlockchainPerformance: String = "check blockchain performance"
 
   protected def parseBlockIndicator(str: String): Option[(Int, Int)] = __.parseInts(str, 2).map((elem) => (elem(0), elem(1)))
 
