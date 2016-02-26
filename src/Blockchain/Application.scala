@@ -3,10 +3,14 @@ package Blockchain
 import java.math.BigInteger
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.Executors
 
 import scala.collection.mutable.ListBuffer
 
 import Common._
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 trait IBusinessLogicFactory {
   def createGenesisBlock(seed: String): GenesisBlockTest1
@@ -27,22 +31,22 @@ object StandardBusinessLogicFactoryIndexed extends IBusinessLogicFactory {
 }
 
 trait ICLIFactory {
-  def toStringGenesisBlock(gblock: GenesisBlockTest1): String
-  def toStringNormalBlock(nblock: NormalBlockTest1): String
+  def toStringGenesisBlock(gblock: IGenesisBlock): String
+  def toStringNormalBlock(nblock: INormalBlock): String
   def toStringPOWGenesisBlock(gblock: POWGenesisBlockTest2): String
   def toStringPOWNormalBlock(nblock: POWNormalBlockTest2): String
 }
 
 object StandardCLIFactory extends ICLIFactory {
-  def toStringGenesisBlock(gblock: GenesisBlockTest1): String = StandardUtil.genesisBlockToString(gblock)
-  def toStringNormalBlock(nblock: NormalBlockTest1): String = StandardUtil.normalBlockToString(nblock)
+  def toStringGenesisBlock(gblock: IGenesisBlock): String = StandardUtil.allGenesisBlockToString(gblock)
+  def toStringNormalBlock(nblock: INormalBlock): String = StandardUtil.allNormalBlockToString(nblock)
   def toStringPOWGenesisBlock(gblock: POWGenesisBlockTest2): String = StandardUtil.powGenesisBlockToString(gblock)
   def toStringPOWNormalBlock(nblock: POWNormalBlockTest2): String = StandardUtil.powNormalBlockToString(nblock)
 }
 
 object HTMLCLIFactory extends ICLIFactory {
-  def toStringGenesisBlock(gblock: GenesisBlockTest1): String = StandardUtil.genesisBlockToHTML(gblock)
-  def toStringNormalBlock(nblock: NormalBlockTest1): String = StandardUtil.normalBlockToHTML(nblock)
+  def toStringGenesisBlock(gblock: IGenesisBlock): String = StandardUtil.allGenesisBlockToHTML(gblock)
+  def toStringNormalBlock(nblock: INormalBlock): String = StandardUtil.allNormalBlockToHTML(nblock)
   def toStringPOWGenesisBlock(gblock: POWGenesisBlockTest2): String = StandardUtil.powGenesisBlockToHTML(gblock)
   def toStringPOWNormalBlock(nblock: POWNormalBlockTest2): String = StandardUtil.powNormalBlockToHTML(nblock)
 }
@@ -56,7 +60,7 @@ class CreateBlockBusinessLogic(settings: BlockchainSettings) extends ICreateBloc
   val powBlockCreator: POWBlockCreator = new POWBlockCreator(settings)
 
   def doCreatePOWGenesisBlock(): Either[POWGenesisBlockTest2, String] = Left(new POWGenesisBlockTest2(settings))
-  def doCreatePOWNormalBlock(): Either[POWNormalBlockTest2, String] = powBlockCreator.createBlock(__.getRandomInt(Int.MaxValue), new IdV1(__.getRandomBytes(settings.hashAlgorithmProperty.lengthByte).toArray), System.currentTimeMillis(), settings.initialTarget, __.getRandomBytes(32).toArray)
+  def doCreatePOWNormalBlock(): Either[POWNormalBlockTest2, String] = powBlockCreator.createBlock(__.getRandomInt(Int.MaxValue), new IdV1(__.getRandomBytes(settings.hashAlgorithmProperty.lengthByte).toArray), System.currentTimeMillis(), settings.initialTarget, __.getRandomBytes(32).toArray, new POWBlockCreatorContext())
 }
 
 trait IPerformanceBusinessLogic {
@@ -205,22 +209,80 @@ class BusinessLogic(factory: IBusinessLogicFactory) extends IBusinessLogic {
 }
 
 trait ISystem {
-  def doStartSystem(callback: (IBlock) => Unit): Either[Unit, String]
-  def doResumeSystem(callback: (IBlock) => Unit): Either[Unit, String]
+  def doStartSystem(settings: BlockchainSettings, callback: (INormalBlock) => Unit): Either[Unit, String]
+  def doResumeSystem(callback: (INormalBlock) => Unit): Either[Unit, String]
   def doStopSystem(): Either[Unit, String]
 }
 
-class System(factory: IBusinessLogicFactory) extends ISystem {
-  def doStartSystem(callback: (IBlock) => Unit): Either[Unit, String] = {
-    Left()
+//TODO: 排他制御
+class System() extends ISystem {
+  implicit val execctx: ExecutionContext = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
+
+  var blockchain: Option[IBlockChain] = None
+  var powBlockCreator: POWBlockCreator = null
+  var context: POWBlockCreatorContext = null
+  var isRunning: Boolean = false
+
+  private def powMining(): Unit = {
+    blockchain match {
+      case Some(bc) =>
+        while (context.f) {
+          powBlockCreator.createBlock(bc.getHeadBlock.index + 1, bc.getHeadBlock.id.asInstanceOf[IdV1], System.currentTimeMillis(), bc.asInstanceOf[POWBlockchain].getHeadTarget, __.getRandomBytes(32).toArray, context) match {
+            case Left(b) => bc.addBlock(b)
+            case Right(_) =>
+          }
+        }
+      case None =>
+    }
   }
 
-  def doResumeSystem(callback: (IBlock) => Unit): Either[Unit, String] = {
-    Left()
+  def doStartSystem(settings: BlockchainSettings, callback: (INormalBlock) => Unit): Either[Unit, String] = {
+    blockchain match {
+      case Some(bc) => Right("the system already has started")
+      case None =>
+        if (settings.blockGenerationScheme == BlockchainSettings.bgsPOW) {
+          blockchain = Some(new POWBlockchain(settings, new POWGenesisBlockTest2(settings)))
+          powBlockCreator = new POWBlockCreator(settings)
+          context = new POWBlockCreatorContext()
+          context.f = true
+          Future {
+            powMining()
+          }
+          isRunning = true
+          Left()
+        }
+        else {
+          Right("the block generation scheme is not supported")
+        }
+    }
+  }
+
+  def doResumeSystem(callback: (INormalBlock) => Unit): Either[Unit, String] = {
+    blockchain match {
+      case Some(bc) =>
+        if (isRunning) {
+          Right("the system is already running")
+        }
+        else {
+          context.f = true
+          Future {
+            powMining()
+          }
+          isRunning = true
+          Left()
+        }
+      case None => Right("the system yet has not started")
+    }
   }
 
   def doStopSystem(): Either[Unit, String] = {
-    Left()
+    blockchain match {
+      case Some(bc) =>
+        context.f = false
+        isRunning = false
+        Left()
+      case None => Right("the system is not running")
+    }
   }
 }
 
@@ -344,12 +406,11 @@ class CLI(factory: ICLIFactory, system: ISystem, logic: IBusinessLogic, clogic: 
     )
   }
 
-  private def callback(block: IBlock): Unit = {
-
-  }
+  private def callback(nblock: INormalBlock): Unit = println(factory.toStringNormalBlock(nblock))
 
   private def executeStartSystem(args: String): Unit = {
-    system.doStartSystem(callback) match {
+    //TODO: ブロックチェーン設定 暫定
+    system.doStartSystem(BlockchainSettings.defaultSettings, callback) match {
       case Left(_) => println("system started")
       case Right(message) => println(__.toErrorMessage(message))
     }

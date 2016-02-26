@@ -25,6 +25,9 @@ trait IGenesisBlock extends IBlock {
   //起源ブロックの親ブロックの識別子は空である
   val parentId: Option[IId] = None
 }
+//通常ブロックを表す
+trait INormalBlock extends IBlock {
+}
 
 //POWに必要な属性を表す
 trait IPOW extends IValidatableItems {

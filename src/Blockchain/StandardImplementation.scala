@@ -71,6 +71,7 @@ class TrustworthinessV1(trustworthinessIn: BigInteger) extends ITrustworthiness 
 object BlockchainSettings {
   lazy val defaultSettings: BlockchainSettings = new BlockchainSettings(
     defaultHashAlgorithm,
+    defaultBlockGenerationScheme,
     defaultSeed,
     defaultInitialTimestamp,
     defaultInitialTarget,
@@ -84,7 +85,11 @@ object BlockchainSettings {
   val haSha256: String = "sha256"
   val haProperties: Map[String, HashAlgorithmProperty] = Map(haSha256 -> new HashAlgorithmProperty(32))
 
+  val bgsPOW: String = "pow"
+  val bgsPOS: String = "POS"
+
   val defaultHashAlgorithm: String = haSha256
+  val defaultBlockGenerationScheme: String = bgsPOW
   val defaultSeed: String = "seed"
   val defaultInitialTimestamp: Long = 0
   val defaultInitialTarget: IdV1 = new IdV1(Array(UByte.__(0), UByte.__(127), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255), UByte.__(255)))
@@ -96,6 +101,7 @@ object BlockchainSettings {
 }
 class BlockchainSettings(
   hashAlgorithmIn: String,
+  blockGenerationSchemeIn: String,
   seedIn: String,
   initialTimestampIn: Long,
   initialTargetIn: IdV1,
@@ -107,6 +113,7 @@ class BlockchainSettings(
 ) {
   val hashAlgorithm: String = hashAlgorithmIn
   val hashAlgorithmProperty: HashAlgorithmProperty = BlockchainSettings.haProperties(hashAlgorithmIn)
+  val blockGenerationScheme: String = blockGenerationSchemeIn
   val seed: String = seedIn
   val initialTimestamp: Long = initialTimestampIn
   val initialTarget: IdV1 = initialTargetIn
@@ -200,7 +207,7 @@ class GenesisBlockTest1(seedIn: String) extends BlockBaseV1 with IGenesisBlock {
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(seed))
 }
 
-class NormalBlockTest1(indexIn: Long, parentIdIn: IdV1, trustworthinessIn: TrustworthinessV1, dataIn: Array[Byte]) extends BlockBaseV1() {
+class NormalBlockTest1(indexIn: Long, parentIdIn: IdV1, trustworthinessIn: TrustworthinessV1, dataIn: Array[Byte]) extends BlockBaseV1 with INormalBlock {
   val maxDataLength: Int = 1024
 
   val index: Long = indexIn
@@ -228,7 +235,7 @@ abstract class GenesisBlockTest2(settings: BlockchainSettings) extends BlockBase
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(seed))
 }
 
-abstract class NormalBlockTest2(indexIn: Long, parentIdIn: IdV1, dataIn: Array[Byte]) extends BlockBaseV1() with IValidatableItems {
+abstract class NormalBlockTest2(indexIn: Long, parentIdIn: IdV1, dataIn: Array[Byte]) extends BlockBaseV1 with INormalBlock with IValidatableItems {
   val index: Long = indexIn
   val parentId: Option[IdV1] = Some(parentIdIn)
 
@@ -294,8 +301,12 @@ class POWNormalBlockTest2(settings: BlockchainSettings, indexIn: Long, parentIdI
   protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(timestamp), target.toBytes, nonce)
 }
 
+class POWBlockCreatorContext() {
+  var f: Boolean = true
+}
+
 class POWBlockCreator(settings: BlockchainSettings) {
-  def createBlock(index: Long, parentId: IdV1, timestamp: Long, target: IdV1, data: Array[Byte]): Either[POWNormalBlockTest2, String] = {
+  def createBlock(index: Long, parentId: IdV1, timestamp: Long, target: IdV1, data: Array[Byte], context: POWBlockCreatorContext): Either[POWNormalBlockTest2, String] = {
     var bi: BigInteger = BigInteger.ZERO
     var nonce: Array[Byte] = bi.toByteArray
     var block: POWNormalBlockTest2 = new POWNormalBlockTest2(settings, index, parentId, timestamp, target, nonce, data)
@@ -303,7 +314,7 @@ class POWBlockCreator(settings: BlockchainSettings) {
       case Some(either) => Right(either.right.get)
       case None =>
         var f: Boolean = true
-        while (f) {
+        while (f && context.f) {
           if (block.isValidItem(POWNormalBlockTest2.validationNameId)) {
             f = false
           }
@@ -368,11 +379,41 @@ object StandardUtil {
     )
   }
 
+  def allGenesisBlockToString(gblock: IGenesisBlock): String = {
+    gblock match {
+      case b: GenesisBlockTest1 => genesisBlockToString(b)
+      case b: POWGenesisBlockTest2 => powGenesisBlockToString(b)
+      case _ => __.emptyString
+    }
+  }
+  def allNormalBlockToString(nblock: INormalBlock): String = {
+    nblock match {
+      case b: NormalBlockTest1 => normalBlockToString(b)
+      case b: POWNormalBlockTest2 => powNormalBlockToString(b)
+      case _ => __.emptyString
+    }
+  }
+
   def genesisBlockToString(gblock: GenesisBlockTest1): String = __.toMultilineString(block1ToStringElements(gblock) ++ gblock1ToStringElements(gblock))
   def normalBlockToString(nblock: NormalBlockTest1): String = __.toMultilineString(block1ToStringElements(nblock) ++ nblock1ToStringElements(nblock))
 
   def powGenesisBlockToString(gblock: POWGenesisBlockTest2): String = __.toMultilineString(block1ToStringElements(gblock) ++ gblock2ToStringElements(gblock) ++ powblockToStringElements(gblock))
   def powNormalBlockToString(nblock: POWNormalBlockTest2): String = __.toMultilineString(block1ToStringElements(nblock) ++ nblock2ToStringElements(nblock) ++ powblockToStringElements(nblock))
+
+  def allGenesisBlockToHTML(gblock: IGenesisBlock): String = {
+    gblock match {
+      case b: GenesisBlockTest1 => genesisBlockToHTML(b)
+      case b: POWGenesisBlockTest2 => powGenesisBlockToHTML(b)
+      case _ => __.emptyString
+    }
+  }
+  def allNormalBlockToHTML(nblock: INormalBlock): String = {
+    nblock match {
+      case b: NormalBlockTest1 => normalBlockToHTML(b)
+      case b: POWNormalBlockTest2 => powNormalBlockToHTML(b)
+      case _ => __.emptyString
+    }
+  }
 
   def genesisBlockToHTML(gblock: GenesisBlockTest1): String = __.toMultilineStringHTML(block1ToStringElements(gblock) ++ gblock1ToStringElements(gblock))
   def normalBlockToHTML(nblock: NormalBlockTest1): String = __.toMultilineStringHTML(block1ToStringElements(nblock) ++ nblock1ToStringElements(nblock))

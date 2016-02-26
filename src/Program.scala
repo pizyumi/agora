@@ -38,7 +38,7 @@ object Program {
     )
 
     val cli: Common.CLI = new Common.CLI()
-    cli.register(new Blockchain.CLI(StandardCLIFactory, new BusinessLogic(StandardBusinessLogicFactory), new CreateBlockBusinessLogic(BlockchainSettings.defaultSettings), perfLogicsMap))
+    cli.register(new Blockchain.CLI(StandardCLIFactory, new System(), new BusinessLogic(StandardBusinessLogicFactory), new CreateBlockBusinessLogic(BlockchainSettings.defaultSettings), perfLogicsMap))
     cli.register(new Secp256k1TestCLI())
     cli.register(new GraphvizSampleCLI(dotExeFile, graphvizFolder))
     cli.register(new LinkedListTestCLI(reportFolder, dotExeFile))

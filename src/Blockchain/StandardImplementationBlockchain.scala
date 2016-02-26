@@ -452,6 +452,10 @@ class POWBlockchain(settings: BlockchainSettings, genesis: IGenesisBlock) extend
     }
   }
 
+  def getTarget(block: IBlock): Option[IdV1] = getBlockTree(block.id).map((bt) => getTarget(bt))
+
+  def getHeadTarget: IdV1 = getBlockTree(getHeadBlock.id).map((bt) => getTarget(bt)).get
+
   protected def getTarget(pt: ITree[IBlock]): IdV1 = {
     if (pt.getValue.index < settings.blockGenerationInterval) {
       settings.initialTarget
@@ -500,7 +504,8 @@ class POWBlockchain(settings: BlockchainSettings, genesis: IGenesisBlock) extend
               Right("target is wrong")
             }
           case None => Right("the block's parent block is not in the blockchain")
-        }      case None => Right("the block's parent id is not specified")
+        }
+      case None => Right("the block's parent id is not specified")
     }
   }
 
