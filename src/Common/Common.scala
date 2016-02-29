@@ -11,6 +11,8 @@ import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.security.MessageDigest
+import java.text.SimpleDateFormat
+import java.util.Date
 import javax.xml.bind.DatatypeConverter
 
 import scala.collection.mutable.ListBuffer
@@ -61,6 +63,11 @@ object __ {
   def getSha256(in: Array[Byte]): Array[Byte] = mdsha256.digest(in)
 
   def toHexString(in: Array[Byte]): String = DatatypeConverter.printHexBinary(in)
+  def fromHexString(in: String): Array[Byte] = in.replaceAll("[^0-9A-Fa-f]", "").sliding(2, 2).toArray.map(Integer.parseInt(_, 16).toByte)
+
+  lazy val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+
+  def fromStringToDate(in: String): Date = dateFormat.parse(in)
 
   lazy val rand: Random = new Random()
 

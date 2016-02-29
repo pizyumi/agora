@@ -1,9 +1,13 @@
 package Blockchain
 
 import java.math.BigInteger
+import java.text.{SimpleDateFormat, DateFormat}
 import java.util.Date
 
 import Common._
+import org.json4s.JString
+import org.json4s.JsonAST.{JDouble, JInt, JValue}
+import org.json4s.native.JsonMethods
 
 //ブロックの識別子の標準実装
 class IdV1(idIn: Array[Byte]) extends IId {
@@ -78,15 +82,15 @@ object BlockchainSettings {
     defaultMaxLengthNonce,
     defaultRetargetBlock,
     defaultBlockGenerationInterval,
-    defaultmaxRetargetChangeRate,
-    defaultminRetargetChangeRate
+    defaultMaxRetargetChangeRate,
+    defaultMinRetargetChangeRate
   )
 
   val haSha256: String = "sha256"
   val haProperties: Map[String, HashAlgorithmProperty] = Map(haSha256 -> new HashAlgorithmProperty(32))
 
   val bgsPOW: String = "pow"
-  val bgsPOS: String = "POS"
+  val bgsPOS: String = "pos"
 
   val defaultHashAlgorithm: String = haSha256
   val defaultBlockGenerationScheme: String = bgsPOW
@@ -96,8 +100,102 @@ object BlockchainSettings {
   val defaultMaxLengthNonce: Int = 8
   val defaultRetargetBlock: Int = 16
   val defaultBlockGenerationInterval: Int = 10
-  val defaultmaxRetargetChangeRate: Double = 4.0
-  val defaultminRetargetChangeRate: Double = 0.25
+  val defaultMaxRetargetChangeRate: Double = 4.0
+  val defaultMinRetargetChangeRate: Double = 0.25
+
+  val itemHashAlgorithm: String = "hash algorithm"
+  val itemBlockGenerationScheme: String = "block generation scheme"
+  val itemSeed: String = "seed"
+  val itemInitialTimestamp: String = "initial timestamp"
+  val itemInitialTarget: String = "initial target"
+  val itemMaxLengthNonce: String = "max nonce length"
+  val itemRetargetBlock: String = "retarget block interval"
+  val itemBlockGenerationInterval: String = "block generation interval"
+  val itemMaxRetargetChangeRate: String = "max retarget change rate"
+  val itemMinRetargetChangeRate: String = "min retarget change rate"
+
+  def parseBlockchainSettings(jsonStr: String): BlockchainSettings = {
+    val json: JValue = JsonMethods.parse(jsonStr)
+
+    val hashAlgorithm: String = json \ itemHashAlgorithm match {
+      case x: JString => x.values
+      case _ =>
+        println("doesn't parse hash algorithm. use default setting.")
+        defaultHashAlgorithm
+    }
+    val blockGenerationScheme: String = json \ itemBlockGenerationScheme match {
+      case x: JString => x.values
+      case _ =>
+        println("doesn't parse blockchain generation scheme. use default setting.")
+        defaultBlockGenerationScheme
+    }
+    val seed: String = json \ itemSeed match {
+      case x: JString => x.values
+      case _ =>
+        println("doesn't parse seed. use default setting.")
+        defaultSeed
+    }
+    val initialTimestamp: Long = json \ itemInitialTimestamp match {
+      case x: JString => __.fromStringToDate(x.values).getTime
+      case _ =>
+        println("doesn't parse initial timestamp. use default setting.")
+        defaultInitialTimestamp
+    }
+    val initialTarget: IdV1 = json \ itemInitialTarget match {
+      case x: JString => new IdV1(__.fromHexString(x.values))
+      case _ =>
+        println("doesn't parse initial target. use default setting.")
+        defaultInitialTarget
+    }
+    val maxLengthNonce: Int = json \ itemMaxLengthNonce match {
+      case x: JString => x.values.toInt
+      case x: JDouble => x.values.toInt
+      case _ =>
+        println("doesn't parse max nonce length. use default setting.")
+        defaultMaxLengthNonce
+    }
+    val retargetBlock: Int = json \ itemRetargetBlock match {
+      case x: JString => x.values.toInt
+      case x: JDouble => x.values.toInt
+      case _ =>
+        println("doesn't parse retarget block interval. use default setting.")
+        defaultRetargetBlock
+    }
+    val blockGenerationInterval: Int = json \ itemBlockGenerationInterval match {
+      case x: JString => x.values.toInt
+      case x: JDouble => x.values.toInt
+      case _ =>
+        println("doesn't parse block generation interval. use default setting.")
+        defaultBlockGenerationInterval
+    }
+    val maxRetargetChangeRate: Double = json \ itemMaxRetargetChangeRate match {
+      case x: JString => x.values.toDouble
+      case x: JDouble => x.values
+      case _ =>
+        println("doesn't parse max retarget change rate. use default setting.")
+        defaultMaxRetargetChangeRate
+    }
+    val minRetargetChangeRate: Double = json \ itemMinRetargetChangeRate match {
+      case x: JString => x.values.toDouble
+      case x: JDouble => x.values
+      case _ =>
+        println("doesn't parse min retarget change rate. use default setting.")
+        defaultMinRetargetChangeRate
+    }
+
+    new BlockchainSettings(
+      hashAlgorithm,
+      blockGenerationScheme,
+      seed,
+      initialTimestamp,
+      initialTarget,
+      maxLengthNonce,
+      retargetBlock,
+      blockGenerationInterval,
+      maxRetargetChangeRate,
+      minRetargetChangeRate
+    )
+  }
 }
 class BlockchainSettings(
   hashAlgorithmIn: String,

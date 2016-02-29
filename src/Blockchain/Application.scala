@@ -416,10 +416,27 @@ class CLI(factory: ICLIFactory, system: ISystem, logic: IBusinessLogic, clogic: 
   private def callback(nblock: INormalBlock): Unit = println(factory.toStringNormalBlock(nblock))
 
   private def executeStartSystem(args: String): Unit = {
-    //TODO: ブロックチェーン設定 暫定
-    system.doStartSystem(BlockchainSettings.defaultSettings, callback) match {
-      case Left(_) => println("system started")
-      case Right(message) => println(__.toErrorMessage(message))
+    val settings: Option[BlockchainSettings] = {
+      if (args.isEmpty) {
+        Some(BlockchainSettings.defaultSettings)
+      }
+      else {
+        val outPath: Path = __.fs.getPath(args)
+        if (Files.exists(outPath)) {
+          Some(BlockchainSettings.parseBlockchainSettings(__.readFile(outPath)))
+        }
+        else {
+          None
+        }
+      }
+    }
+    settings match {
+      case Some(s) =>
+        system.doStartSystem(s, callback) match {
+          case Left(_) => println("system started")
+          case Right(message) => println(__.toErrorMessage(message))
+        }
+      case None => println("failed loading blockchain settings file")
     }
   }
 

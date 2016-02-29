@@ -10,5 +10,6 @@
     <orderEntry type="library" name="scala-sdk-2.11.7" level="application" />
     <orderEntry type="library" name="core-1.53.0.0" level="project" />
     <orderEntry type="library" name="skinny-blank-app-standalone-assembly-0.1.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="org.json4s:json4s-native_2.11:3.3.0" level="project" />
   </component>
 </module>
