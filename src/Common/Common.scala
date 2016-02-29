@@ -64,6 +64,14 @@ object __ {
 
   def toHexString(in: Array[Byte]): String = DatatypeConverter.printHexBinary(in)
   def fromHexString(in: String): Array[Byte] = in.replaceAll("[^0-9A-Fa-f]", "").sliding(2, 2).toArray.map(Integer.parseInt(_, 16).toByte)
+  def isHexString(in: String, n: Int): Boolean = {
+    if (in.length != n*2) {
+      false
+    }
+    else {
+      in.toLowerCase.forall((c) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
+    }
+  }
 
   lazy val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
 
