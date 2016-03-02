@@ -1,76 +1,16 @@
-package Blockchain
+package Blockchain.Impl2
 
 import java.math.BigInteger
-import java.text.{ParseException, SimpleDateFormat, DateFormat}
+import java.text.ParseException
 import java.util.Date
 
-import Common._
-import org.json4s.JString
 import org.json4s.JsonAST.{JDouble, JInt, JValue}
+import org.json4s._
 import org.json4s.native.JsonMethods
 
-//ブロックの識別子の標準実装
-class IdV1(idIn: Array[Byte]) extends IId {
-  //ブロックの識別子の長さの最大値
-  val maxIdLength: Int = 32
-
-  //ブロックの識別子は32バイト以下のバイト配列である
-  val id: Array[Byte] = {
-    if (idIn.length > maxIdLength) {
-      throw new IllegalArgumentException("id is too long")
-    }
-    idIn
-  }
-
-  //ブロックの識別子のバイト配列が同等である場合、ブロックの識別子は同一である
-  protected override def specIsSame(r: ICompare): Boolean = id.sameElements(r.asInstanceOf[IdV1].id)
-  //ハッシュコードを返す関数
-  protected override def specHashCode: Int = {
-    if (id.length > 4) {
-      ((id(id.length - 1) * 256 + id(id.length - 2)) * 256 + id(id.length - 3)) * 256 + id(id.length - 4)
-    }
-    else if (id.length == 3) {
-      (id(id.length - 1) * 256 + id(id.length - 2)) * 256 + id(id.length - 3)
-    }
-    else if (id.length == 2) {
-      id(id.length - 1) * 256 + id(id.length - 2)
-    }
-    else if (id.length == 1) {
-      id(id.length - 1)
-    }
-    else {
-      0
-    }
-  }
-  //ブロックの識別子をバイト配列に変換したものはブロックの識別子のバイト配列そのものである
-  protected override def specToBytes: Array[Byte] = id
-}
-
-//ブロックの信用度の標準実装
-class TrustworthinessV1(trustworthinessIn: BigInteger) extends ITrustworthiness {
-  //ブロックの信用度
-  val trustworthiness: BigInteger = trustworthinessIn
-
-  //ブロックの信用度を比較する
-  protected override def specCompare(r: ICompareOrder): Ordering = {
-    val comp: Int = trustworthiness.compareTo(r.asInstanceOf[TrustworthinessV1].trustworthiness)
-    if (comp > 0) {
-      Great
-    }
-    else if (comp == 0) {
-      Equal
-    }
-    else {
-      Less
-    }
-  }
-  //ハッシュコードを返す関数
-  protected override def specHashCode: Int = trustworthiness.mod(BigInteger.valueOf(Int.MaxValue)).intValue()
-  //ブロックの信用度を加算する
-  protected override def specAdd(r: IAddition): IAddition = new TrustworthinessV1(trustworthiness.add(r.asInstanceOf[TrustworthinessV1].trustworthiness))
-  //ブロックの信用度を減算する
-  protected override def specSubtract(r: IAddition): IAddition = new TrustworthinessV1(trustworthiness.subtract(r.asInstanceOf[TrustworthinessV1].trustworthiness))
-}
+import Blockchain.Interface._
+import Blockchain.Impl._
+import Common._
 
 object BlockchainSettings {
   lazy val defaultSettings: BlockchainSettings = new BlockchainSettings(
@@ -86,14 +26,11 @@ object BlockchainSettings {
     defaultMinRetargetChangeRate
   )
 
-  val haSha256: String = "sha256"
-  val haProperties: Map[String, HashAlgorithmProperty] = Map(haSha256 -> new HashAlgorithmProperty(32))
-
   val bgsPOW: String = "pow"
   val bgsPOS: String = "pos"
   val bgsProperties: Map[String, Unit] = Map(bgsPOW -> Unit)
 
-  val defaultHashAlgorithm: String = haSha256
+  val defaultHashAlgorithm: String = BlockchainSettingsBase.haSha256
   val defaultBlockGenerationScheme: String = bgsPOW
   val defaultSeed: String = "seed"
   val defaultInitialTimestamp: Long = 0
@@ -121,7 +58,7 @@ object BlockchainSettings {
 
       val hashAlgorithm: String = json \ itemHashAlgorithm match {
         case x: JString =>
-          if (haProperties.contains(x.values)) {
+          if (BlockchainSettingsBase.haProperties.contains(x.values)) {
             x.values
           }
           else {
@@ -167,7 +104,7 @@ object BlockchainSettings {
       }
       val initialTarget: IdV1 = json \ itemInitialTarget match {
         case x: JString =>
-          if (__.isHexString(x.values, haProperties(hashAlgorithm).lengthByte)) {
+          if (__.isHexString(x.values, BlockchainSettingsBase.haProperties(hashAlgorithm).lengthByte)) {
             new IdV1(__.fromHexString(x.values))
           }
           else {
@@ -296,19 +233,19 @@ object BlockchainSettings {
   }
 }
 class BlockchainSettings(
-  hashAlgorithmIn: String,
-  blockGenerationSchemeIn: String,
-  seedIn: String,
-  initialTimestampIn: Long,
-  initialTargetIn: IdV1,
-  maxLengthNonceIn: Int,
-  retargetBlockIn: Int,
-  blockGenerationIntervalIn: Int,
-  maxRetargetChangeRateIn: Double,
-  minRetargetChangeRateIn: Double
-) {
+                          hashAlgorithmIn: String,
+                          blockGenerationSchemeIn: String,
+                          seedIn: String,
+                          initialTimestampIn: Long,
+                          initialTargetIn: IdV1,
+                          maxLengthNonceIn: Int,
+                          retargetBlockIn: Int,
+                          blockGenerationIntervalIn: Int,
+                          maxRetargetChangeRateIn: Double,
+                          minRetargetChangeRateIn: Double
+                          ) {
   val hashAlgorithm: String = hashAlgorithmIn
-  val hashAlgorithmProperty: HashAlgorithmProperty = BlockchainSettings.haProperties(hashAlgorithmIn)
+  val hashAlgorithmProperty: HashAlgorithmProperty = BlockchainSettingsBase.haProperties(hashAlgorithmIn)
   val blockGenerationScheme: String = blockGenerationSchemeIn
   val seed: String = seedIn
   val initialTimestamp: Long = initialTimestampIn
@@ -334,92 +271,6 @@ class BlockchainSettings(
     }
     new IdV1(array)
   }
-}
-
-class HashAlgorithmProperty(lengthByteIn: Int) {
-  val lengthByte: Int = lengthByteIn
-
-  val langthBit: Int = lengthByteIn * 8
-  val minValue: Array[Byte] = __.getMinBytes(lengthByteIn)
-  val minBigInt: BigInteger = __.bytesToPositiveBigInteger(__.getMinBytes(lengthByteIn))
-  val maxValue: Array[Byte] = __.getMaxBytes(lengthByteIn)
-  val maxBigInt: BigInteger = __.bytesToPositiveBigInteger(__.getMaxBytes(lengthByteIn))
-}
-
-//ブロックの標準実装
-trait BlockBaseV1 extends IBlock {
-  //信用度
-  val trustworthiness: TrustworthinessV1
-  //親ブロックの識別子
-  //val parentId: Option[IdV1]
-
-  //識別子
-  lazy val id: IdV1 = new IdV1(toId)
-
-  //ハッシュ関数
-  protected val hashAlgorithm: String
-
-  //識別子を計算する構成要素
-  protected def toIdBytesIngredient: Array[Array[Byte]] = Array(__.getBytes(index), parentId.map((v) => v.toBytes).getOrElse(Array.emptyByteArray))
-  //識別子を計算する素
-  private def toIdBytes: Array[Byte] = __.getBytes(toIdBytesIngredient)
-  //識別子を計算する
-  //TODO: 他のハッシュ関数（ハッシュ関数の組み合わせも含む）への対応
-  private def toId: Array[Byte] = {
-    if (hashAlgorithm == BlockchainSettings.haSha256) {
-      __.getSha256(toIdBytes)
-    }
-    else {
-      null
-    }
-  }
-
-  //ブロックの識別子が同等である場合、ブロックは同一である
-  protected override def specIsSame(r: ICompare): Boolean = id.id.sameElements(r.asInstanceOf[BlockBaseV1].id.id)
-  //ハッシュコードを返す関数
-  protected override def specHashCode: Int = id.hashCode
-}
-
-//POWブロックの標準実装
-trait POWBlockBaseV1 extends BlockBaseV1 with IPOW {
-  val target: IdV1
-}
-
-class GenesisBlockTest1(seedIn: String) extends BlockBaseV1 with IGenesisBlock {
-  val maxSeedLength: Int = 1024
-
-  val index: Long = 0
-  val trustworthiness: TrustworthinessV1 = new TrustworthinessV1(BigInteger.ZERO)
-
-  val seed: String = {
-    if (seedIn.length > maxSeedLength) {
-      throw new IllegalArgumentException("seed is too long")
-    }
-    seedIn
-  }
-
-  protected val hashAlgorithm: String = BlockchainSettings.haSha256
-
-  protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(__.getBytes(seed))
-}
-
-class NormalBlockTest1(indexIn: Long, parentIdIn: IdV1, trustworthinessIn: TrustworthinessV1, dataIn: Array[Byte]) extends BlockBaseV1 with INormalBlock {
-  val maxDataLength: Int = 1024
-
-  val index: Long = indexIn
-  val parentId: Option[IdV1] = Some(parentIdIn)
-  val trustworthiness: TrustworthinessV1 = trustworthinessIn
-
-  val data: Array[Byte] = {
-    if (dataIn.length > maxDataLength) {
-      throw new IllegalArgumentException("data is too long")
-    }
-    dataIn
-  }
-
-  protected val hashAlgorithm: String = BlockchainSettings.haSha256
-
-  protected override def toIdBytesIngredient: Array[Array[Byte]] = super.toIdBytesIngredient ++ Array(data, trustworthiness.trustworthiness.toByteArray)
 }
 
 abstract class GenesisBlockTest2(settings: BlockchainSettings) extends BlockBaseV1 with IGenesisBlock with IValidatableItems {
@@ -531,89 +382,87 @@ class POWBlockCreator(settings: BlockchainSettings) {
   }
 }
 
-object StandardUtil {
-  def idToString(id: IdV1): String = __.toKeyValueString("id", __.toHexString(id.id))
-
-  def block1ToStringElements(block: BlockBaseV1): Array[String] = {
-    Array(
-      __.toKeyValueString("index", block.index.toString),
-      __.toKeyValueString("id", __.toHexString(block.id.id)),
-      __.toKeyValueString("parent id", block.parentId.map((t) => __.toHexString(t.toBytes)).getOrElse(__.nullString)),
-      __.toKeyValueString("trustworthiness", block.trustworthiness.trustworthiness.toString)
-    )
-  }
-
-  def gblock1ToStringElements(gblock: GenesisBlockTest1): Array[String] = {
-    Array(
-      __.toKeyValueString("seed", gblock.seed)
-    )
-  }
-
-  def nblock1ToStringElements(nblock: NormalBlockTest1): Array[String] = {
-    Array(
-      __.toKeyValueString("data", __.toHexString(nblock.data))
-    )
-  }
-
-  def gblock2ToStringElements(gblock: GenesisBlockTest2): Array[String] = {
-    Array(
-      __.toKeyValueString("seed", gblock.seed)
-    )
-  }
-
-  def nblock2ToStringElements(nblock: NormalBlockTest2): Array[String] = {
-    Array(
-      __.toKeyValueString("data", __.toHexString(nblock.data))
-    )
-  }
-
-  def powblockToStringElements(powblock: POWBlockBaseV1): Array[String] = {
-    Array(
-      __.toKeyValueString("timestamp", new Date(powblock.timestamp).toString),
-      __.toKeyValueString("target", __.toHexString(powblock.target.toBytes)),
-      __.toKeyValueString("nonce", __.toHexString(powblock.nonce))
-    )
-  }
-
-  def allGenesisBlockToString(gblock: IGenesisBlock): String = {
-    gblock match {
-      case b: GenesisBlockTest1 => genesisBlockToString(b)
-      case b: POWGenesisBlockTest2 => powGenesisBlockToString(b)
-      case _ => __.emptyString
+//POWブロック鎖
+object POWBlockchain {
+  val validationNameTarget: String = "target"
+}
+class POWBlockchain(settings: BlockchainSettings, genesis: IGenesisBlock) extends IndexedBlockTree(genesis) {
+  //ブロックを検証する
+  protected override def validateBlock(block: IBlock): Either[Unit, String] = {
+    if (!block.isInstanceOf[POWNormalBlockTest2]) {
+      Right("the block is not supported")
     }
-  }
-  def allNormalBlockToString(nblock: INormalBlock): String = {
-    nblock match {
-      case b: NormalBlockTest1 => normalBlockToString(b)
-      case b: POWNormalBlockTest2 => powNormalBlockToString(b)
-      case _ => __.emptyString
+    else {
+      var validation: Either[Unit, String] = Left()
+      block match {
+        case _: IValidatableItems => validation = block.asInstanceOf[IValidatableItems].isValidWithMessage
+        case _: IValidatable => validation = block.asInstanceOf[IValidatable].isValidWithMessage
+      }
+      validation match {
+        case Left(_) => isConvalidWithMessage(block)
+        case Right(_) => validation
+      }
     }
   }
 
-  def genesisBlockToString(gblock: GenesisBlockTest1): String = __.toMultilineString(block1ToStringElements(gblock) ++ gblock1ToStringElements(gblock))
-  def normalBlockToString(nblock: NormalBlockTest1): String = __.toMultilineString(block1ToStringElements(nblock) ++ nblock1ToStringElements(nblock))
+  def getTarget(block: IBlock): Option[IdV1] = getBlockTree(block.id).map((bt) => getTarget(bt))
 
-  def powGenesisBlockToString(gblock: POWGenesisBlockTest2): String = __.toMultilineString(block1ToStringElements(gblock) ++ gblock2ToStringElements(gblock) ++ powblockToStringElements(gblock))
-  def powNormalBlockToString(nblock: POWNormalBlockTest2): String = __.toMultilineString(block1ToStringElements(nblock) ++ nblock2ToStringElements(nblock) ++ powblockToStringElements(nblock))
+  def getHeadTarget: IdV1 = getBlockTree(getHeadBlock.id).map((bt) => getTarget(bt)).get
 
-  def allGenesisBlockToHTML(gblock: IGenesisBlock): String = {
-    gblock match {
-      case b: GenesisBlockTest1 => genesisBlockToHTML(b)
-      case b: POWGenesisBlockTest2 => powGenesisBlockToHTML(b)
-      case _ => __.emptyString
+  protected def getTarget(pt: ITree[IBlock]): IdV1 = {
+    if (pt.getValue.index < settings.blockGenerationInterval) {
+      settings.initialTarget
+    }
+    else {
+      if (pt.getValue.index % settings.blockGenerationInterval == 0) {
+        val timestamp1: Long = pt.getValue.asInstanceOf[POWBlockBaseV1].timestamp
+        var t: ITree[IBlock] = pt
+        for (i <- 0 until settings.blockGenerationInterval) {
+          t.getParent match {
+            case Some(b) => t = b
+            case None =>
+          }
+        }
+        val timestamp2: Long = t.getValue.asInstanceOf[POWBlockBaseV1].timestamp
+        var timespan: Long = timestamp1 - timestamp2
+        if (timespan < settings.minActualTime * 1000) {
+          timespan = settings.minActualTime * 1000
+        }
+        if (timespan > settings.maxActualTime * 1000) {
+          timespan = settings.maxActualTime * 1000
+        }
+        val rate: Double = timespan.toDouble / (settings.retargetTime * 1000).toDouble
+        val ptTargetBigInt: BigInteger = __.bytesToPositiveBigInteger(pt.getValue.asInstanceOf[POWBlockBaseV1].target.id)
+        var targetBigInt: BigInteger = ptTargetBigInt.multiply(BigInteger.valueOf((rate * 100000000).toLong)).divide(BigInteger.valueOf(100000000))
+        if (targetBigInt.compareTo(settings.hashAlgorithmProperty.maxBigInt) > 0) {
+          targetBigInt = settings.hashAlgorithmProperty.maxBigInt
+        }
+        new IdV1(__.positiveBigIntegerToBytes(targetBigInt, settings.hashAlgorithmProperty.lengthByte))
+      }
+      else {
+        pt.getValue.asInstanceOf[POWBlockBaseV1].target
+      }
     }
   }
-  def allNormalBlockToHTML(nblock: INormalBlock): String = {
-    nblock match {
-      case b: NormalBlockTest1 => normalBlockToHTML(b)
-      case b: POWNormalBlockTest2 => powNormalBlockToHTML(b)
-      case _ => __.emptyString
+
+  protected def isValidTarget(block: IBlock): Either[Unit, String] = {
+    block.parentId match {
+      case Some(pId) =>
+        getBlockTree(pId) match {
+          case Some(pt) =>
+            if (getTarget(pt).isSame(block.asInstanceOf[POWBlockBaseV1].target)) {
+              Left()
+            }
+            else {
+              Right("target is wrong")
+            }
+          case None => Right("the block's parent block is not in the blockchain")
+        }
+      case None => Right("the block's parent id is not specified")
     }
   }
 
-  def genesisBlockToHTML(gblock: GenesisBlockTest1): String = __.toMultilineStringHTML(block1ToStringElements(gblock) ++ gblock1ToStringElements(gblock))
-  def normalBlockToHTML(nblock: NormalBlockTest1): String = __.toMultilineStringHTML(block1ToStringElements(nblock) ++ nblock1ToStringElements(nblock))
-
-  def powGenesisBlockToHTML(gblock: POWGenesisBlockTest2): String = __.toMultilineStringHTML(block1ToStringElements(gblock) ++ gblock2ToStringElements(gblock) ++ powblockToStringElements(gblock))
-  def powNormalBlockToHTML(nblock: POWNormalBlockTest2): String = __.toMultilineStringHTML(block1ToStringElements(nblock) ++ nblock2ToStringElements(nblock) ++ powblockToStringElements(nblock))
+  protected override def specConvalidatableItems: Map[String, (IBlock) => Either[Unit, String]] = Map(
+    POWBlockchain.validationNameTarget -> ((block) => isValidTarget(block))
+  )
 }

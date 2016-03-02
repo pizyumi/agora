@@ -1,14 +1,15 @@
-import java.math.BigInteger
 import java.nio.file.Files
 import java.nio.file.Path
 
 import skinny.micro.{WebServer, WebApp}
 
-object Program {
-  import Common._
-  import Crypto._
-  import Blockchain._
+import Common._
+import Crypto._
+import Blockchain._
+import Blockchain.Impl2._
+import Blockchain.App._
 
+object Program {
   lazy val exit: String = "exit"
   lazy val test: String = "test"
 
@@ -38,7 +39,7 @@ object Program {
     )
 
     val cli: Common.CLI = new Common.CLI()
-    cli.register(new Blockchain.CLI(StandardCLIFactory, new System(), new BusinessLogic(StandardBusinessLogicFactory), new CreateBlockBusinessLogic(BlockchainSettings.defaultSettings), perfLogicsMap))
+    cli.register(new Blockchain.App.CLI(StandardCLIFactory, new System(), new BusinessLogic(StandardBusinessLogicFactory), new CreateBlockBusinessLogic(BlockchainSettings.defaultSettings), perfLogicsMap))
     cli.register(new Secp256k1TestCLI())
     cli.register(new GraphvizSampleCLI(dotExeFile, graphvizFolder))
     cli.register(new LinkedListTestCLI(reportFolder, dotExeFile))

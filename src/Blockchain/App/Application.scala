@@ -1,16 +1,19 @@
-package Blockchain
+package Blockchain.App
 
 import java.math.BigInteger
-import java.nio.file.Files
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import java.util.concurrent.Executors
 
 import scala.collection.mutable.ListBuffer
-
-import Common._
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
+import Blockchain.Interface._
+import Blockchain.Impl._
+import Blockchain.Impl1._
+import Blockchain.Impl2._
+import Blockchain.Util._
+import Common._
 
 trait IBusinessLogicFactory {
   def createGenesisBlock(seed: String): GenesisBlockTest1

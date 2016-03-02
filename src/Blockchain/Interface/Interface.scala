@@ -1,4 +1,4 @@
-package Blockchain
+package Blockchain.Interface
 
 import Common._
 

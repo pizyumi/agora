@@ -2,6 +2,10 @@ package Blockchain
 
 import java.math.BigInteger
 
+import Blockchain.Interface._
+import Blockchain.Impl._
+import Blockchain.Impl1._
+import Blockchain.Util._
 import Common._
 
 class StandardImplementationTestCLI() extends ICLIComponent with ITestComponent {
