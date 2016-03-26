@@ -1,0 +1,219 @@
+\documentclass[dvipdfmx,9pt,notheorems]{beamer}
+%%%% 和文用 %%%%%
+\usepackage{bxdpx-beamer}
+\usepackage{pxjahyper}
+\usepackage{minijs}%和文用
+\usepackage{hyperref}
+\renewcommand{\kanjifamilydefault}{\gtdefault}%和文用に
+
+
+%%%% スライドの見た目 %%%%%
+\usetheme{Madrid}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{frametitle}[default][center]
+\setbeamertemplate{navigation symbols}{}
+\setbeamercovered{transparent}%好みに応じてどうぞ）
+\setbeamertemplate{footline}[page number]
+\setbeamerfont{footline}{size=\normalsize,series=\bfseries}
+\setbeamercolor{footline}{fg=black,bg=black}
+
+
+%%%% 定義環境 %%%%%
+\usepackage{amsmath,amssymb}
+\usepackage{amsthm}
+\usepackage{verbatim}
+\theoremstyle{definition}
+\newtheorem{theorem}{定理}
+\newtheorem{definition}{定義}
+\newtheorem{proposition}{命題}
+\newtheorem{lemma}{補題}
+\newtheorem{corollary}{系}
+\newtheorem{conjecture}{予想}
+\newtheorem*{remark}{Remark}
+\renewcommand{\proofname}{}
+%%%%%%%%%
+
+
+
+
+\title[汎用ブロックチェーンプラットフォームAgora]{\fontsize{20pt}{0pt}\selectfont 汎用ブロックチェーンプラットフォームAgora}
+\author[名前]{\fontsize{15pt}{0pt}\selectfont 鷲田雄紀}
+\institute[JPN]{\fontsize{10pt}{0pt}\selectfont AIHソフト}
+\date{\fontsize{15pt}{0pt}\selectfont \today}
+
+\begin{document}
+
+\begin{frame}[plain]\frametitle{}
+\titlepage %表紙
+\end{frame}
+
+%\begin{frame}\frametitle{Contents}
+%\tableofcontents{} %目次
+%\end{frame}
+
+%\section{セクション1}
+
+\begin{frame}\frametitle{汎用ブロックチェーンプラットフォーム}
+特定の設定（仕様）のブロックチェーンシステムを動かすプログラムではなく、様々な設定のブロックチェーンシステムを動かすための汎用的なプログラム。
+\begin{block}{例}
+\begin{itemize}
+ \item ハッシュ関数として様々なものが使える。
+ \item POWを採用することもPOSを採用することもできる。POWとPOSを組み合わせることもできる（その他のブロック生成方法も使える）。
+ \item Bitcoinのような採掘方式だけでなく、Ethereumのような採掘方式も使える（その他の採掘方式も使える）。
+ \item ブロックチェーンの永続化方法を選択できる（全て永続化、必要でなくなったデータは削除（枝刈り）、状態木は別に保持して古いデータは全て削除、永続化しない（永続化はアプリケーション層の責務とする）など）。
+ \item 様々な状態木の作成。
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}\frametitle{汎用ブロックチェーンプラットフォーム}
+\begin{block}{今まで}
+\begin{itemize}
+ \item Bitcoin
+ \begin{itemize}
+  \item ブロックチェーンを利用した分散型暗号通貨。
+  \item 通貨システムに特化したシステムであり、汎用的でない。
+  \item リファレンス実装も先にブロックチェーンシステムがあってその上に通貨システムがあるという形にはなっていない。ブロックチェーンシステムの実装と通貨システムの実装が混ざっている。すなわち、ブロックチェーンがBitcoinありきの実装になっている。
+ \end{itemize}
+ \item Bitcoin 2.0
+ \begin{itemize}
+  \item アプリケーション層の1つ下の層での汎用化、多機能化。
+  \begin{itemize}
+   \item Ethereum・・・ブロックチェーン技術を用いた様々なアプリケーションを構築できるようにするためブロックチェーンに格納されるデータの一部をTuring完全な一種のプログラムとして解釈、実行できるようにし、それを通貨システムと結び付ける。
+   \item Stroj
+   \item Enigma
+  \end{itemize}
+  \item Bitcoinの上に汎用化層を追加し、その上でアプリケーション層を構築できるように。
+  \begin{itemize}
+   \item Counterparty
+  \end{itemize}
+ \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}\frametitle{汎用ブロックチェーンプラットフォーム}
+\begin{block}{これから}
+\begin{itemize}
+ \item ブロックチェーンシステムの部分とアプリケーションの部分の完全な分離。
+ \begin{itemize}
+  \item システムプログラマとアプリケーションプログラマの役割分担。
+ \end{itemize}
+ \item ブロックチェーンシステムとアプリケーションの関係は1対1ではなく、1対多。
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}\frametitle{汎用ブロックチェーンプラットフォーム}
+\begin{block}{今まで}
+\begin{itemize}
+ \item 複数の暗号通貨が連携することはあまりなかった。
+ \item BitcoinはBitcoinで独立しているし、LitecoinはLitecoinで独立しているし、EthereumはEthereumで独立しているし・・・。
+\end{itemize}
+\end{block}
+\begin{alertblock}{例外}
+\begin{itemize}
+ \item[] merged mining
+ \begin{itemize}
+  \item 採掘を共有している（採掘で複数の暗号通貨が採掘できる可能性がある）。
+  \item BitcoinとNamecoinなど。
+  \item ただし、限定的だった。
+ \end{itemize}
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}\frametitle{汎用ブロックチェーンプラットフォーム}
+\begin{block}{これから}
+\begin{itemize}
+ \item 複数の暗号通貨が連携することが多くなる。
+ \begin{itemize}
+  \item サイドチェイン
+  \begin{itemize}
+   \item ある暗号通貨のネットワークで別の暗号通貨をやり取りするための仕組み。
+   \item 1つのブロックチェーンに格納される暗号通貨が1種類ではなくなる。
+   \item 複数の暗号通貨のプロトコルに対応しなければならない。
+  \end{itemize}
+ \end{itemize}
+ \item 暗号通貨だけでなく、暗号通貨と暗号通貨以外のブロックチェーンアプリケーションや暗号通貨以外のブロックチェーンアプリケーション同士の連携も増えるかもしれない。
+\end{itemize}
+\end{block}
+\begin{alertblock}{ならば}
+\begin{itemize}
+ \item 汎用的なプラットフォームの上でアプリケーションを構築した方がほぼ確実に連携が容易になる。
+ \item 逆に、連携が容易になったことにより、様々なアプリケーション同士が連携し、ブロックチェーンエコシステムの益々の発展に寄与する可能性もある。
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}\frametitle{基本機能}
+\begin{itemize}
+ \item ブロックチェーン
+ \item 主要なハッシュ関数
+ \item POW
+ \item POS
+ \item 親ブロック選択方針
+ \item 永続化
+ \item 状態木
+ \item P2P通信？
+ \item 基本的なアプリケーション
+ \item 契約関連機能？
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{拡張性}
+\begin{itemize}
+ \item 基本機能だけでは対応しきれないアプリケーションがある。
+ \item 様々なアプリケーションに対応するためにはプラットフォームに拡張性がなければならない。
+\end{itemize}
+\begin{itemize}
+ \item 拡張のためのインターフェイスを提供。
+ \item インターフェイスを介して拡張を行う。
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{ブロックチェーン設定ファイル}
+\begin{itemize}
+ \item ブロックチェーンの設定を記述するファイル。
+ \item 汎用ブロックチェーンプラットフォームはこの設定に基づいてブロックチェーンシステムを起動する。
+\end{itemize}
+\begin{itemize}
+ \item 設定ファイルを記述するだけなので楽。
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{プロトタイプ}
+作りました。
+\begin{itemize}
+ \item https://github.com/pizyumi/agora
+ \item 言語はScala。
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{プロトタイプのブロックチェーン設定項目}
+\fontsize{8pt}{0pt}\selectfont
+\begin{itemize}
+ \item hash algorithm・・・ブロックのハッシュ値を計算するハッシュ関数を指定します。文字列として指定します。現在はsha256しかサポートしていません。
+ \item block generation scheme・・・ブロックを生成する方式を指定します。文字列として指定します。現在はpowしかサポートしていません。
+ \item seed・・・ユニークなジェネシスブロックを生成するための任意の文字列です。
+ \item initial timestamp・・・ジェネシスブロックのタイムスタンプです。日時をyyyy/MM/dd HH:mm:ss形式で文字列として指定します。
+ \item initial target・・・最初のターゲットです。16進数文字列として指定します。
+ \item max nonce length・・・ナンスとして最大何バイトのものまで認めるかです。
+ \item retarget block interval・・・ターゲットを再計算する間隔です。ブロック単位です。たとえば、10と指定した場合には10ブロック毎にターゲットを再計算します。
+ \item max retarget change rate・・・ターゲットの再計算時に最大で現在のターゲットからどれくらいの割合までの変動を許すかです。たとえば、2と指定した場合には現在のターゲットから次のターゲットが2倍より大きくなることはありません。
+ \item min retarget change rate・・・ターゲットの再計算時に最小で現在のターゲットからどれくらいの割合までの変動を許すかです。たとえば、0.5と指定した場合には現在のターゲットから次のターゲットが半分より小さくなることはありません。
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{今後}
+\begin{itemize}
+ \item スポンサーを探しています。
+ \item スポンサーが集まったらプロトタイプの先を開発いたします。
+ \item 集まらなかったら残念ですが開発終了となります。
+\end{itemize}
+\begin{itemize}
+ \item 興味のある方はaihsoft@hotmail.comまでご連絡ください。
+\end{itemize}
+\end{frame}
+
+\end{document}
