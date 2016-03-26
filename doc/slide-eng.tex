@@ -1,0 +1,190 @@
+\documentclass[dvipdfmx,9pt,notheorems]{beamer}
+%%%% 和文用 %%%%%
+\usepackage{bxdpx-beamer}
+\usepackage{pxjahyper}
+\usepackage{minijs}%和文用
+\usepackage{hyperref}
+\renewcommand{\kanjifamilydefault}{\gtdefault}%和文用に
+
+
+%%%% スライドの見た目 %%%%%
+\usetheme{Madrid}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{frametitle}[default][center]
+\setbeamertemplate{navigation symbols}{}
+\setbeamercovered{transparent}%好みに応じてどうぞ）
+\setbeamertemplate{footline}[page number]
+\setbeamerfont{footline}{size=\normalsize,series=\bfseries}
+\setbeamercolor{footline}{fg=black,bg=black}
+
+
+%%%% 定義環境 %%%%%
+\usepackage{amsmath,amssymb}
+\usepackage{amsthm}
+\usepackage{verbatim}
+\theoremstyle{definition}
+\newtheorem{theorem}{定理}
+\newtheorem{definition}{定義}
+\newtheorem{proposition}{命題}
+\newtheorem{lemma}{補題}
+\newtheorem{corollary}{系}
+\newtheorem{conjecture}{予想}
+\newtheorem*{remark}{Remark}
+\renewcommand{\proofname}{}
+%%%%%%%%%
+
+
+
+
+\title[Agora: general-purpose blockchain platform]{\fontsize{20pt}{0pt}\selectfont Agora: general-purpose blockchain platform}
+\author[名前]{\fontsize{15pt}{0pt}\selectfont Yuki Washida}
+\institute[JPN]{\fontsize{10pt}{0pt}\selectfont AIH software}
+\date{\fontsize{15pt}{0pt}\selectfont \today}
+
+\begin{document}
+
+\begin{frame}[plain]\frametitle{}
+\titlepage %表紙
+\end{frame}
+
+%\begin{frame}\frametitle{Contents}
+%\tableofcontents{} %目次
+%\end{frame}
+
+%\section{セクション1}
+
+\begin{frame}\frametitle{general-purpose blockchain platform}
+not a program that runs a blockchain system of a fixed specification, but a platform to implement various blockchain systems of revisable settings.
+\begin{block}{example}
+\begin{itemize}
+ \item use various well-known hash functions.
+ \item adopt POW, POS, POW/POS hybrid etc.
+ \item leverage Bitcoin-like mining scheme, Ethereum-like mining scheme, etc.
+ \item persistence mechanism of blockchain.
+ \begin{itemize}
+  \item retain all data.
+  \item delete unnecessary data (pruning).
+  \item construct a state tree and delete all data that is sufficiently old.
+  \item does not save all data (does not retain data in the platform layer but in the application layer if necessary).
+ \end{itemize}
+ \item create diverse state trees.
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}\frametitle{general-purpose blockchain platform}
+\begin{block}{so far}
+\begin{itemize}
+ \item Bitcoin
+ \begin{itemize}
+  \item a distributed cryptocurrency on top of a blockchain.
+  \item is not a general-purpose system per se.
+  \item in fact, in the reference implementation, the implementation of blockchain part and that of cryptocurrency-specific part is entangled together. namely, the implementation of blockchain in the Bitcoin reference implementation is FOR USE ONLY IN Bitcoin.
+ \end{itemize}
+ \item Bitcoin 2.0
+ \begin{itemize}
+  \item generalization and other functions than currency underpinning the application layer.
+  \begin{itemize}
+   \item Ethereum・・・in order to build various kinds of applications that employ the blockchain technology, it allows a transaction to be interpreted as a Turing-complete program and executed as such. It is also closely tied to a currency system.
+  \end{itemize}
+  \item covers Bitcoin with a generalization layer and the application layer is mounted thereon.
+  \begin{itemize}
+   \item Counterparty・・・it allows a Bitcoin transaction to be interpreted as a Turing-complete program in the meta-level.
+  \end{itemize}
+ \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}\frametitle{general-purpose blockchain platform}
+\begin{block}{the future}
+\begin{itemize}
+ \item decoupling between blockchain and application part.
+ \begin{itemize}
+  \item roll-sharing between system and application programmers.
+ \end{itemize}
+ \item the relationship between blockchain systems and applications is not one-to-one. that is one-to-many in nature.
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}\frametitle{general-purpose blockchain platform}
+\begin{block}{so far}
+\begin{itemize}
+ \item tandems between multiple cryptocurrencies are rare and minor.
+ \item Bitcoin is a distinct autonomous system. Litecoin is another distinct autonomous system. Ethereum...
+\end{itemize}
+\end{block}
+\begin{alertblock}{exception}
+\begin{itemize}
+ \item[] merged mining
+ \begin{itemize}
+  \item share mining resource.
+  \item Bitcoin and Namecoin.
+  \item uncommon.
+ \end{itemize}
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}\frametitle{general-purpose blockchain platform}
+\fontsize{8pt}{0pt}\selectfont
+\begin{block}{the future}
+\begin{itemize}
+ \item tandems between multiple cryptocurrencies will be the next trend.
+ \begin{itemize}
+  \item sidechain
+  \begin{itemize}
+   \item a framework to transact arbitrary types of cryptocurrencies in any cryptocurrency network.
+   \item a blockchain stores arbitrary types of cryptocurrency transactions.
+   \item must support multiple cryptocurrency protocols.
+  \end{itemize}
+ \end{itemize}
+ \item tandems between cryptocurrencies and the other types of blockchain applications or among such applications may be burgeoning out.
+\end{itemize}
+\end{block}
+\begin{alertblock}{therefore}
+\begin{itemize}
+ \item it is arguably easy to coordinate applications built on top of the same platform.
+ \item conversely, due to the easiness of coordination and cooperation, it is probable that different blockchain applications will interact with each other more collaboratively and the blochchain ecosystem may be increasingly thriving.
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}\frametitle{basic feature}
+\begin{itemize}
+ \item blockchain
+ \item major hash functions
+ \item POW
+ \item POS
+ \item parent block selection policies
+ \item persistence
+ \item state trees
+ \item P2P communication
+ \item building blocks of basic applications
+\begin{itemize}
+ \item cryptocurrency, cryptoshare, cryptobond...
+ \item data management features
+\end{itemize}
+ \item smart contracts
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{extensibility}
+\begin{itemize}
+ \item extensibility is necessary to support building applications that need extra features beyond built-in ones.
+\end{itemize}
+\begin{itemize}
+ \item interface for extensibility.
+ \item extend built-in features or conception via this interface.
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{blockchain settings file}
+\begin{itemize}
+ \item a file that specifies settings of a blockchain system.
+ \item the platform runs the blockchain system based on the settings in the file.
+\end{itemize}
+\end{frame}
+
+\end{document}
